@@ -48,3 +48,5 @@ It is shown at the end of an English presentation titled "Who decides your futur
 ## Workflow rules for Claude Code
 - Work in small steps. After each step, run the code/tests and report what works.
 - Ask before adding new dependencies beyond the stack above.
+
+@AGENTS.md
