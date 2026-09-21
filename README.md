@@ -10,14 +10,25 @@ language academy in Cebu. See `CLAUDE.md` for the product philosophy and the res
 Next.js (App Router) + TypeScript + Tailwind CSS. Saju math is done in code with
 `lunar-javascript`; the LLM only interprets the structured result.
 
+## Setup
+
+```bash
+npm install
+cp .env.local.example .env.local   # then paste your Gemini key
+```
+
+`GEMINI_API_KEY` is read only in server code. `.env.local` is gitignored.
+`GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`.
+
 ## Commands
 
 ```bash
-npm run dev        # dev server
-npm run build      # production build
-npm test           # vitest run
-npm run typecheck  # tsc --noEmit
-npm run lint       # eslint
+npm run dev          # dev server
+npm run build        # production build
+npm test             # vitest run
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run try-reading  # three sample readings in the terminal (needs a real key)
 ```
 
 ## Saju engine
@@ -79,8 +90,40 @@ three-pillar chart has 6.
 **Ties break in the fixed order** wood → fire → earth → metal → water. With three elements tied
 at the top, `strongestElement` is whichever comes first in that order.
 
+## Reading engine
+
+`POST /api/reading` takes `{ birthDate: "YYYY-MM-DD", birthTime: "HH:mm" | null, role }` and
+returns `{ pillars, reading }`. Birth years outside 1940–2015, impossible dates and malformed
+times are rejected with 400 before anything is calculated.
+
+- `lib/ai/prompt.ts` — the system prompt, verbatim.
+- `lib/ai/schema.ts` — the zod output schema. The Gemini schema is derived from it with
+  `z.toJSONSchema`, so the two cannot drift apart.
+- `lib/ai/reading.ts` — builds the model payload, calls Gemini, validates, retries once.
+
+### What the model is and is not given
+
+The model never sees the birth date or birth time. It receives the calculated chart only. The
+payload also differs from the engine output in one place: `ten_god_group_counts.peer` has the day
+master's Bigyeon removed, because that star is the reader, not a peer. Sending the raw count
+would read every single person as group-class oriented. See the Ten God rule above.
+
+Star groups are sent in English (`authority`, `output`, …). Korean labels in the payload leak
+into the B1 English reading.
+
+### Word limits and the retry
+
+JSON Schema cannot express "max 40 words", so the limits reach Gemini only as field descriptions
+and are enforced by zod afterwards. When validation fails, the request is sent a second time with
+the validation error appended, then gives up. Two attempts, never more.
+
 ## Tests
 
 `lib/saju/calculate.test.ts` covers three known-time births, one unknown-time birth, the 23:30 Ja
 hour boundary, and the Ipchun boundary on both sides. It also cross-checks the Ten God tables in
 this repo against `lunar-javascript`'s own independent Ten God output.
+
+`lib/ai/*.test.ts` and `app/api/reading/route.test.ts` cover the output schema, the payload
+(including the peer adjustment and the absence of birth data), the retry path with a mocked SDK,
+and every 400 branch of the route. The Gemini call itself is mocked — the live model path is only
+exercised by `npm run try-reading` with a real key.
