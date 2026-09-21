@@ -55,7 +55,7 @@ describe('calculateSaju — birth time known', () => {
       expect(chart(result)).toBe(testCase.chart);
       expect(result.dayMaster.hanja).toBe(testCase.dayMaster);
       expect(result.pillars.day.stem.hanja).toBe(testCase.dayMaster);
-      expect(result.pillars.day.stemTenGod).toBeNull();
+      expect(result.pillars.day.stemTenGod).toBe('bigyeon');
     });
 
     it(`counts eight characters for ${testCase.name}`, () => {
@@ -65,9 +65,8 @@ describe('calculateSaju — birth time known', () => {
       const groups = Object.values(result.tenGodGroups).reduce((a, b) => a + b, 0);
 
       expect(elements).toBe(8);
-      // Seven Ten Gods: four branches plus three stems — the day stem is the day master itself.
-      expect(tenGods).toBe(7);
-      expect(groups).toBe(7);
+      expect(tenGods).toBe(8);
+      expect(groups).toBe(8);
     });
   }
 
@@ -93,13 +92,13 @@ describe('calculateSaju — birth time unknown', () => {
     expect(result.dayMaster.hanja).toBe('甲');
   });
 
-  it('counts six characters and five Ten Gods', () => {
+  it('counts six characters and six Ten Gods', () => {
     const result = calculateSaju(input);
     const elements = Object.values(result.elementCounts).reduce((a, b) => a + b, 0);
     const tenGods = Object.values(result.tenGodCounts).reduce((a, b) => a + b, 0);
 
     expect(elements).toBe(6);
-    expect(tenGods).toBe(5);
+    expect(tenGods).toBe(6);
   });
 
   it('matches the same date read at the 12:00 reference hour', () => {
@@ -185,13 +184,13 @@ describe('Ten God tables', () => {
     const eightChar = Solar.fromYmdHms(1990, 5, 15, 14, 30, 0).getLunar().getEightChar();
     eightChar.setSect(1);
 
-    expect(TEN_GOD_KOREAN[result.pillars.year.stemTenGod!]).toBe(
+    expect(TEN_GOD_KOREAN[result.pillars.year.stemTenGod]).toBe(
       KOREAN_FROM_CHINESE[eightChar.getYearShiShenGan()]
     );
-    expect(TEN_GOD_KOREAN[result.pillars.month.stemTenGod!]).toBe(
+    expect(TEN_GOD_KOREAN[result.pillars.month.stemTenGod]).toBe(
       KOREAN_FROM_CHINESE[eightChar.getMonthShiShenGan()]
     );
-    expect(TEN_GOD_KOREAN[result.pillars.hour!.stemTenGod!]).toBe(
+    expect(TEN_GOD_KOREAN[result.pillars.hour!.stemTenGod]).toBe(
       KOREAN_FROM_CHINESE[eightChar.getTimeShiShenGan()]
     );
     expect(TEN_GOD_KOREAN[result.pillars.year.branchTenGod]).toBe(
@@ -206,6 +205,26 @@ describe('Ten God tables', () => {
     expect(TEN_GOD_KOREAN[result.pillars.hour!.branchTenGod]).toBe(
       KOREAN_FROM_CHINESE[eightChar.getTimeShiShenZhi()[0]]
     );
+  });
+
+  it('labels the day stem Bigyeon where lunar-javascript labels it the day master', () => {
+    const result = calculateSaju({ year: 1995, month: 12, day: 13, time: '16:40' });
+    const eightChar = Solar.fromYmdHms(1995, 12, 13, 16, 40, 0).getLunar().getEightChar();
+    eightChar.setSect(1);
+
+    expect(eightChar.getDayShiShenGan()).toBe('日主');
+    expect(result.pillars.day.stemTenGod).toBe('bigyeon');
+  });
+
+  it('always reads the day stem as Bigyeon, whatever the day master', () => {
+    const dayMasters = new Set<string>();
+    for (let day = 1; day <= 10; day += 1) {
+      const result = calculateSaju({ year: 1995, month: 12, day, time: '12:00' });
+      dayMasters.add(result.dayMaster.hanja);
+      expect(result.pillars.day.stemTenGod).toBe('bigyeon');
+    }
+
+    expect(dayMasters.size).toBe(10);
   });
 
   it('reads a same-element same-polarity stem as Bigyeon and a same-element opposite as Geopjae', () => {

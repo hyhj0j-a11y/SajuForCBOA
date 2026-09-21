@@ -61,9 +61,20 @@ rollover. One edge stays unavoidable: if the birth falls on a solar-term boundar
 pillar depends on a time we do not have.
 
 **Ten Gods count the main hidden stem only.** Each branch contributes its principal hidden stem
-(본기); the secondary hidden stems are ignored. The day stem is the day master itself, so it
-contributes no Ten God. A full chart therefore has 7 Ten Gods (3 stems + 4 branches), and a
-three-pillar chart has 5.
+(본기); the secondary hidden stems are ignored.
+
+**The day stem counts as Bigyeon (비견).** The day stem is the day master itself. Read through
+the Ten God formula it is the same element at the same polarity, which is Bigyeon, and that is
+what this engine reports and counts. Many almanacs instead leave the slot blank and label it
+일간 / 일원 / 아신 — `lunar-javascript` returns `日主` there — so a chart printed elsewhere may
+show one fewer Bigyeon than this one. A full chart has 8 Ten Gods (4 stems + 4 branches); a
+three-pillar chart has 6.
+
+> **Consequence for result section 4.** Every chart carries this Bigyeon, so `peer` is inflated
+> by exactly 1 for everyone. A plain `peer > authority` comparison would push every user toward
+> "group class". Section 4 has to compare on `peer - 1` against `authority`, or use a threshold
+> that subtracts the constant some other way. This is a known trap — do not compare the raw
+> counts.
 
 **Ties break in the fixed order** wood → fire → earth → metal → water. With three elements tied
 at the top, `strongestElement` is whichever comes first in that order.

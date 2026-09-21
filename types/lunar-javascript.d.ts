@@ -15,6 +15,8 @@ declare module 'lunar-javascript' {
     getTimeShiShenZhi(): string[];
     getYearShiShenGan(): string;
     getMonthShiShenGan(): string;
+    /** Returns the literal `日主`, not a Ten God name — the day stem is the day master. */
+    getDayShiShenGan(): string;
     getTimeShiShenGan(): string;
   }
 

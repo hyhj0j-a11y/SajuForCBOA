@@ -31,8 +31,11 @@ export interface Pillar {
   branch: Sign;
   /** Ten God of the branch's main hidden stem, seen from the day master. */
   branchTenGod: TenGod;
-  /** Ten God of the stem, seen from the day master. `null` for the day pillar (it is the day master). */
-  stemTenGod: TenGod | null;
+  /**
+   * Ten God of the stem, seen from the day master. The day pillar's own stem is the day
+   * master, so it is always `bigyeon` — see the Ten God counting note in README.
+   */
+  stemTenGod: TenGod;
 }
 
 export interface SajuInput {
@@ -225,11 +228,11 @@ function signOfBranch(hanja: string): Sign {
   return sign;
 }
 
-function buildPillar(dayMaster: Sign, stem: Sign, branch: Sign, isDayPillar: boolean): Pillar {
+function buildPillar(dayMaster: Sign, stem: Sign, branch: Sign): Pillar {
   return {
     stem,
     branch,
-    stemTenGod: isDayPillar ? null : tenGodOf(dayMaster, stem),
+    stemTenGod: tenGodOf(dayMaster, stem),
     branchTenGod: tenGodOf(dayMaster, signOfStem(BRANCH_MAIN_STEM[branch.hanja])),
   };
 }
@@ -252,22 +255,19 @@ export function calculateSaju(input: SajuInput): SajuResult {
     year: buildPillar(
       dayMaster,
       signOfStem(eightChar.getYearGan()),
-      signOfBranch(eightChar.getYearZhi()),
-      false
+      signOfBranch(eightChar.getYearZhi())
     ),
     month: buildPillar(
       dayMaster,
       signOfStem(eightChar.getMonthGan()),
-      signOfBranch(eightChar.getMonthZhi()),
-      false
+      signOfBranch(eightChar.getMonthZhi())
     ),
-    day: buildPillar(dayMaster, dayMaster, signOfBranch(eightChar.getDayZhi()), true),
+    day: buildPillar(dayMaster, dayMaster, signOfBranch(eightChar.getDayZhi())),
     hour: timeKnown
       ? buildPillar(
           dayMaster,
           signOfStem(eightChar.getTimeGan()),
-          signOfBranch(eightChar.getTimeZhi()),
-          false
+          signOfBranch(eightChar.getTimeZhi())
         )
       : null,
   };
@@ -294,9 +294,7 @@ export function calculateSaju(input: SajuInput): SajuResult {
     elementCounts[pillar.stem.element] += 1;
     elementCounts[pillar.branch.element] += 1;
 
-    const gods: TenGod[] = [pillar.branchTenGod];
-    if (pillar.stemTenGod) gods.push(pillar.stemTenGod);
-    for (const god of gods) {
+    for (const god of [pillar.stemTenGod, pillar.branchTenGod]) {
       tenGodCounts[god] += 1;
       tenGodGroups[TEN_GOD_GROUP[god]] += 1;
     }
