@@ -5,14 +5,14 @@ import type { BirthRequest } from '@/lib/birth-input';
 import { MAX_BIRTH_DATE, MAX_YEAR, MIN_BIRTH_DATE, MIN_YEAR } from '@/lib/birth-range';
 
 const ROLES = [
-  { value: 'student', label: "I'm a student" },
-  { value: 'teacher', label: "I'm a teacher" },
+  { value: 'student', emoji: '🎒', label: "I'm a student" },
+  { value: 'teacher', emoji: '🧑‍🏫', label: "I'm a teacher" },
 ] as const;
 
 const FIELD =
-  'h-14 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink ' +
-  'outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/15 ' +
-  'disabled:bg-paper disabled:text-muted';
+  'h-14 w-full rounded-lg border border-line bg-surface px-3.5 text-base text-ink ' +
+  'outline-none focus-visible:border-2 focus-visible:border-ink focus-visible:px-[13px] ' +
+  'disabled:bg-soft disabled:text-muted';
 
 interface Props {
   initial: BirthRequest;
@@ -41,8 +41,8 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
     >
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-sm font-medium text-muted">Who is reading?</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {ROLES.map(({ value, label }) => (
+        <div className="grid grid-cols-2 gap-1 rounded-full border border-line bg-surface p-1 shadow-float">
+          {ROLES.map(({ value, emoji, label }) => (
             <label key={value} className="contents">
               <input
                 type="radio"
@@ -53,11 +53,12 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
                 className="peer sr-only"
               />
               <span
-                className="flex h-14 cursor-pointer items-center justify-center rounded-xl border border-line
-                  bg-surface px-3 text-center text-[15px] font-medium text-muted transition-colors
-                  peer-checked:border-ink peer-checked:bg-ink peer-checked:text-paper
-                  peer-focus-visible:ring-2 peer-focus-visible:ring-ink/25"
+                className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3
+                  text-center text-[15px] font-medium text-muted transition-colors
+                  peer-checked:bg-ink peer-checked:text-white
+                  peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink"
               >
+                <span aria-hidden="true">{emoji}</span>
                 {label}
               </span>
             </label>
@@ -102,14 +103,14 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
             type="checkbox"
             checked={timeUnknown}
             onChange={(event) => setTimeUnknown(event.target.checked)}
-            className="size-5 accent-ink"
+            className="size-5 rounded accent-ink"
           />
           I don&apos;t know my birth time
         </label>
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-xl bg-fire/10 px-4 py-3 text-[15px] text-fire">
+        <p role="alert" className="rounded-lg bg-error/10 px-4 py-3 text-[15px] text-error">
           {error}
         </p>
       ) : null}
@@ -118,14 +119,14 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
         <button
           type="submit"
           disabled={sent}
-          className="h-14 w-full rounded-xl bg-ink text-base font-semibold text-paper
-            transition-transform active:scale-[0.99] disabled:opacity-50
+          className="h-12 w-full rounded-lg bg-seal text-base font-medium text-white
+            active:bg-seal-active disabled:opacity-50
             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          {sent ? 'Reading…' : 'Read my Saju'}
+          {sent ? 'Reading…' : <>Read my Saju <span aria-hidden="true">✨</span></>}
         </button>
         <p className="text-center text-[13px] text-muted">
-          We don&apos;t save your birthday.
+          <span aria-hidden="true">🔒</span> We don&apos;t save your birthday.
         </p>
       </div>
     </form>

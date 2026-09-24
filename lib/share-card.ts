@@ -1,6 +1,7 @@
 import type { Reading, Role } from './ai/schema';
 import type { PillarName } from './saju/calculate';
 import {
+  ELEMENT_EMOJI,
   ELEMENT_INK,
   ELEMENT_LABEL,
   ELEMENTS,
@@ -8,20 +9,20 @@ import {
   polarityLabel,
   type SajuChart,
 } from './saju/display';
-import { ACADEMY_ROWS, sectionLabels } from './reading-sections';
+import { ACADEMY_ROWS, NUDGES, sectionHeadings, type SectionHeading } from './reading-sections';
 
 const WIDTH = 1080;
 const PAD = 64;
 const CONTENT = WIDTH - PAD * 2;
 
-const PAPER = '#faf7f1';
-const SURFACE = '#ffffff';
-const INK = '#1b1f2e';
-const MUTED = '#6b7183';
-const LINE = '#e8e1d5';
+const PAPER = '#ffffff';
+const SURFACE = '#f7f7f7';
+const INK = '#222222';
+const MUTED = '#6a6a6a';
+const LINE = '#dddddd';
 const SEAL = '#c4452f';
 
-const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 const HANJA = '"Noto Serif KR", "Songti SC", "SimSun", "Malgun Gothic", serif';
 
 const ORDER: PillarName[] = ['year', 'month', 'day', 'hour'];
@@ -52,31 +53,34 @@ interface Section {
   nudge?: { label: string; text: string };
 }
 
+/** Emoji first, then the label — canvas draws colour emoji in their own colours. */
+const tag = ({ emoji, label }: SectionHeading) => `${emoji}  ${label}`;
+
 function sectionsOf(reading: Reading, role: Role): Section[] {
-  const label = sectionLabels(role);
+  const heading = sectionHeadings(role);
 
   return [
-    { eyebrow: label.identity, title: reading.identity.title, body: reading.identity.body },
-    { eyebrow: label.hidden_side, title: reading.hidden_side.title, body: reading.hidden_side.body },
+    { eyebrow: tag(heading.identity), title: reading.identity.title, body: reading.identity.body },
+    { eyebrow: tag(heading.hidden_side), title: reading.hidden_side.title, body: reading.hidden_side.body },
     {
-      eyebrow: label.english_style,
+      eyebrow: tag(heading.english_style),
       title: reading.english_style.title,
       body: reading.english_style.body,
-      nudge: { label: 'Try this', text: reading.english_style.action },
+      nudge: { label: tag(NUDGES.tryThis), text: reading.english_style.action },
     },
-    { eyebrow: label.cebu_mode, title: reading.cebu_mode.title, body: reading.cebu_mode.body },
+    { eyebrow: tag(heading.cebu_mode), title: reading.cebu_mode.title, body: reading.cebu_mode.body },
     {
-      eyebrow: label.challenge,
+      eyebrow: tag(heading.challenge),
       title: reading.challenge.title,
       body: reading.challenge.body,
-      nudge: { label: 'Small step', text: reading.challenge.action },
+      nudge: { label: tag(NUDGES.smallStep), text: reading.challenge.action },
     },
     {
-      eyebrow: label.academy_reading,
-      rows: ACADEMY_ROWS.map(([key, rowLabel]) => ({ label: rowLabel, text: reading.academy_reading[key] })),
+      eyebrow: tag(heading.academy_reading),
+      rows: ACADEMY_ROWS.map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
     },
-    { eyebrow: label.experiment, body: reading.experiment },
-    { eyebrow: label.question, title: reading.question },
+    { eyebrow: tag(heading.experiment), body: reading.experiment },
+    { eyebrow: tag(heading.question), title: reading.question },
   ];
 }
 
@@ -187,7 +191,7 @@ function render(
   text(dayMaster, PAD, `500 26px ${SANS}`, INK);
 
   y += 40;
-  const counts = ELEMENTS.map((element) => `${ELEMENT_LABEL[element]} ${chart.elementCounts[element]}`).join('   ');
+  const counts = ELEMENTS.map((element) => `${ELEMENT_EMOJI[element]} ${ELEMENT_LABEL[element]} ${chart.elementCounts[element]}`).join("   ");
   text(counts, PAD, `400 24px ${SANS}`, MUTED);
 
   if (!chart.timeKnown) {
@@ -198,7 +202,7 @@ function render(
   // ── Sections ──────────────────────────────────────────────────────────────
   for (const section of sectionsOf(reading, role)) {
     y += 72;
-    text(section.eyebrow.toUpperCase(), PAD, `600 22px ${SANS}`, SEAL);
+    text(section.eyebrow, PAD, `500 26px ${SANS}`, MUTED);
 
     if (section.title) {
       y += 12;
@@ -207,14 +211,14 @@ function render(
 
     if (section.body) {
       y += 12;
-      paragraph(section.body, PAD, CONTENT, `400 30px ${SANS}`, '#33384a', 44);
+      paragraph(section.body, PAD, CONTENT, `400 30px ${SANS}`, '#3f3f3f', 44);
     }
 
     for (const row of section.rows ?? []) {
       y += 44;
-      text(row.label.toUpperCase(), PAD, `600 20px ${SANS}`, MUTED);
+      text(row.label, PAD, `600 24px ${SANS}`, INK);
       y -= 4;
-      paragraph(row.text, PAD, CONTENT, `400 30px ${SANS}`, '#33384a', 44);
+      paragraph(row.text, PAD, CONTENT, `400 30px ${SANS}`, '#3f3f3f', 44);
     }
 
     if (section.nudge) {
@@ -226,10 +230,10 @@ function render(
       box(PAD, nudgeTop, CONTENT, height, SURFACE, LINE);
 
       y = nudgeTop + 44;
-      text(section.nudge.label.toUpperCase(), PAD + 32, `600 22px ${SANS}`, SEAL);
+      text(section.nudge.label, PAD + 32, `600 24px ${SANS}`, INK);
       for (const line of lines) {
         y += 42;
-        text(line, PAD + 32, `400 28px ${SANS}`, '#33384a');
+        text(line, PAD + 32, `400 28px ${SANS}`, '#3f3f3f');
       }
       y = nudgeTop + height;
     }

@@ -22,6 +22,15 @@ export const ELEMENT_INK: Record<Element, string> = {
   water: '#26364f',
 };
 
+/** Shown next to the element name, never instead of it. */
+export const ELEMENT_EMOJI: Record<Element, string> = {
+  wood: '🌳',
+  fire: '🔥',
+  earth: '⛰️',
+  metal: '⚙️',
+  water: '💧',
+};
+
 export const ELEMENT_TINT: Record<Element, string> = {
   wood: '#e7f2ec',
   fire: '#fbeae6',

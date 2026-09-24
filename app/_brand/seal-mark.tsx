@@ -2,9 +2,9 @@
  * The 四 seal from the page header, drawn as strokes so `next/og` can render it without a CJK font.
  * Shared by the favicon, the Apple touch icon and the link-preview image.
  */
-export const PAPER = '#faf7f1';
-export const INK = '#1b1f2e';
-export const MUTED = '#6b7183';
+export const PAPER = '#ffffff';
+export const INK = '#222222';
+export const MUTED = '#6a6a6a';
 export const SEAL = '#c4452f';
 export const ELEMENT_COLORS = ['#2f7d5b', '#c4452f', '#b9822b', '#6f7c8a', '#26364f'];
 

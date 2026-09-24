@@ -1,22 +1,36 @@
 @import "tailwindcss";
 
+/*
+ * Tokens follow DESIGN.md (Airbnb system): white canvas, near-black ink, one accent used
+ * sparingly, hairline borders and a single shadow tier. The accent stays our seal red rather
+ * than Airbnb's Rausch, so the site keeps its own identity.
+ */
 @theme {
-  --color-paper: #faf7f1;
+  --color-paper: #ffffff;
   --color-surface: #ffffff;
-  --color-ink: #1b1f2e;
-  --color-muted: #6b7183;
-  --color-line: #e8e1d5;
+  --color-soft: #f7f7f7;
+  --color-strong: #f2f2f2;
+  --color-ink: #222222;
+  --color-body: #3f3f3f;
+  --color-muted: #6a6a6a;
+  --color-line: #dddddd;
+  --color-line-soft: #ebebeb;
   --color-seal: #c4452f;
+  --color-seal-active: #a8361f;
+  --color-error: #c13515;
 
   --color-wood: #2f7d5b;
   --color-fire: #c4452f;
   --color-earth: #b9822b;
   --color-metal: #6f7c8a;
   --color-water: #26364f;
+
+  --shadow-float: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.1) 0 4px 8px 0;
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   /* The chart's hanja come from the device's own CJK font — no webfont download on a phone. */
   --font-hanja: "Noto Serif KR", "Nanum Myeongjo", "Songti SC", "SimSun", "Apple SD Gothic Neo",
     "Malgun Gothic", serif;

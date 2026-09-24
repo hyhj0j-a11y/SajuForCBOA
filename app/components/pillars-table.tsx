@@ -1,5 +1,6 @@
 import type { Pillar, PillarName } from '@/lib/saju/calculate';
 import {
+  ELEMENT_EMOJI,
   ELEMENT_INK,
   ELEMENT_LABEL,
   ELEMENT_TINT,
@@ -37,7 +38,7 @@ function Column({ name, pillar, isDay }: { name: PillarName; pillar: Pillar | nu
       </span>
       <div
         className={`w-full rounded-xl border bg-surface ${
-          isDay ? 'border-ink' : 'border-line'
+          isDay ? 'border-ink ring-1 ring-ink' : 'border-line'
         }`}
       >
         {pillar ? (
@@ -56,12 +57,12 @@ function Column({ name, pillar, isDay }: { name: PillarName; pillar: Pillar | nu
 
 export function PillarsTable({ chart }: { chart: SajuChart }) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-4">
-      <header className="flex items-baseline gap-2">
-        <span className="text-[11px] font-semibold tabular-nums text-seal">01</span>
-        <h2 className="text-[13px] font-semibold uppercase tracking-wider text-muted">
-          Your Four Pillars
-        </h2>
+    <section className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-5">
+      <header className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-strong text-[20px]">
+          <span aria-hidden="true">🏛️</span>
+        </span>
+        <h2 className="text-[14px] font-medium text-muted">Your Four Pillars</h2>
       </header>
 
       <div className="grid grid-cols-4 gap-2">
@@ -80,25 +81,28 @@ export function PillarsTable({ chart }: { chart: SajuChart }) {
       </p>
 
       {!chart.timeKnown ? (
-        <p className="rounded-lg bg-surface px-3 py-2 text-[13px] text-muted">
-          Time unknown — this reading uses three pillars.
+        <p className="rounded-lg bg-soft px-3 py-2 text-[13px] text-muted">
+          <span aria-hidden="true">🕰️</span> Time unknown — this reading uses three pillars.
         </p>
       ) : null}
 
-      <ul className="grid grid-cols-5 gap-1">
+      <ul className="grid grid-cols-5 gap-1.5">
         {ELEMENTS.map((element) => {
           const count = chart.elementCounts[element];
           return (
             <li
               key={element}
-              className="flex items-center justify-center gap-1 rounded-full px-1 py-1 text-[11px] font-medium"
-              style={{
-                backgroundColor: ELEMENT_TINT[element],
-                color: count === 0 ? '#9aa0ad' : ELEMENT_INK[element],
-              }}
+              className={`flex flex-col items-center gap-0.5 rounded-[14px] px-1 py-2 text-[11px] font-medium ${
+                count === 0 ? 'opacity-45' : ''
+              }`}
+              style={{ backgroundColor: ELEMENT_TINT[element], color: ELEMENT_INK[element] }}
             >
-              {ELEMENT_LABEL[element]}
-              <span className="tabular-nums opacity-70">{count}</span>
+              <span aria-hidden="true" className="text-[18px] leading-none">
+                {ELEMENT_EMOJI[element]}
+              </span>
+              <span>
+                {ELEMENT_LABEL[element]} <span className="tabular-nums">{count}</span>
+              </span>
             </li>
           );
         })}

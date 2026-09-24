@@ -169,10 +169,15 @@ export function SajuApp() {
     return (
       <div className="flex flex-col gap-10">
         <Wordmark />
-        <p className="-mt-4 text-[15px] leading-relaxed text-muted">
-          Your Four Pillars, worked out from your birthday and read back in plain English — as a
-          mirror for how you learn.
-        </p>
+        <div className="-mt-2 flex flex-col gap-2">
+          <h1 className="text-[28px] font-bold leading-tight tracking-[-0.3px] text-ink">
+            Who decides your future? <span aria-hidden="true">🪞</span>
+          </h1>
+          <p className="text-[16px] leading-normal text-body">
+            Your Four Pillars, worked out from your birthday and read back in plain English — as a
+            mirror for how you learn.
+          </p>
+        </div>
         <BirthForm initial={values} error={formError} onSubmit={start} />
       </div>
     );
@@ -187,8 +192,10 @@ export function SajuApp() {
       {reading.status === 'done' ? (
         <ReadingCards reading={reading.reading} role={values.role} />
       ) : reading.status === 'failed' ? (
-        <section role="alert" className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
-          <h2 className="text-[17px] font-semibold text-ink">The reading did not come through.</h2>
+        <section role="alert" className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-5">
+          <h2 className="text-[18px] font-semibold text-ink">
+            <span aria-hidden="true">😵‍💫</span> The reading did not come through.
+          </h2>
           <p className="text-[15px] leading-relaxed text-muted">
             Your chart above is real and calculated. The written reading is still missing, and we
             will not invent one.
@@ -196,7 +203,7 @@ export function SajuApp() {
           <button
             type="button"
             onClick={retryReading}
-            className="h-12 rounded-xl border border-ink text-[15px] font-semibold text-ink"
+            className="h-12 rounded-lg border border-ink bg-surface text-[16px] font-medium text-ink"
           >
             Retry now
           </button>
@@ -206,12 +213,14 @@ export function SajuApp() {
       )}
 
       <footer className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-6 text-center">
-        <p className="text-[15px] font-medium text-ink">Use Saju as a mirror, not as a map.</p>
+        <p className="text-[15px] font-medium text-ink">
+          <span aria-hidden="true">🪞</span> Use Saju as a mirror, not as a map.
+        </p>
         <p className="text-[14px] text-muted">Our future is still ours to choose.</p>
       </footer>
 
       {shareError ? (
-        <p role="alert" className="text-center text-[14px] text-fire">
+        <p role="alert" className="text-center text-[14px] text-error">
           {shareError}
         </p>
       ) : null}
@@ -221,16 +230,16 @@ export function SajuApp() {
           type="button"
           onClick={saveImage}
           disabled={!chart || reading.status !== 'done' || sharing}
-          className="h-14 rounded-xl bg-ink text-base font-semibold text-paper disabled:opacity-40"
+          className="h-12 rounded-lg bg-seal text-base font-medium text-white active:bg-seal-active disabled:opacity-40"
         >
-          {sharing ? 'Preparing…' : 'Save as image'}
+          {sharing ? 'Preparing…' : <><span aria-hidden="true">📸</span> Save as image</>}
         </button>
         <button
           type="button"
           onClick={() => backToForm(null)}
-          className="h-14 rounded-xl border border-line bg-surface text-base font-semibold text-ink"
+          className="h-12 rounded-lg border border-ink bg-surface text-base font-medium text-ink"
         >
-          Try again
+          <span aria-hidden="true">🔄</span> Try again
         </button>
       </div>
     </div>
@@ -240,7 +249,7 @@ export function SajuApp() {
 function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
     <header className="flex items-center gap-3">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-seal font-hanja text-[19px] text-paper">
+      <span className="flex size-9 items-center justify-center rounded-lg bg-seal font-hanja text-[19px] text-white">
         四
       </span>
       <div className="flex flex-col">
@@ -257,8 +266,8 @@ function Wordmark({ compact = false }: { compact?: boolean }) {
 
 function ChartSkeleton() {
   return (
-    <section className="flex animate-pulse flex-col gap-4 rounded-2xl border border-line bg-paper p-4">
-      <span className="block h-3 w-32 rounded-full bg-line" />
+    <section className="flex animate-pulse flex-col gap-4 rounded-[14px] border border-line bg-surface p-5">
+      <span className="block h-3 w-32 rounded-full bg-strong" />
       <div className="grid grid-cols-4 gap-2">
         {[0, 1, 2, 3].map((column) => (
           <div key={column} className="h-[132px] rounded-xl border border-line bg-surface" />
