@@ -1,9 +1,11 @@
-import type { Role } from './ai/schema';
+import type { Reading, Role } from './ai/schema';
 
 export interface SectionHeading {
   emoji: string;
   label: string;
 }
+
+export const SNAPSHOT_HEADING: SectionHeading = { emoji: '🔎', label: 'You, in Saju' };
 
 /**
  * Section headings, shared by the result page and the share card so the two never drift apart.
@@ -11,13 +13,13 @@ export interface SectionHeading {
  * never vary between readings.
  */
 export function sectionHeadings(role: Role) {
+  const staff = role === 'staff';
   return {
     identity: { emoji: '🪞', label: 'Who you are' },
     hidden_side: { emoji: '🌙', label: 'Your hidden side' },
-    english_style:
-      role === 'teacher'
-        ? { emoji: '🧑‍🏫', label: 'How you teach' }
-        : { emoji: '🗣️', label: 'Your English style' },
+    english_style: staff
+      ? { emoji: '💼', label: 'Your work style' }
+      : { emoji: '🗣️', label: 'Your English style' },
     cebu_mode: { emoji: '🏝️', label: 'You in Cebu' },
     challenge: { emoji: '🧗', label: 'Your challenge here' },
     academy_reading: { emoji: '📝', label: 'Your academy reading' },
@@ -31,9 +33,18 @@ export const NUDGES = {
   smallStep: { emoji: '👣', label: 'Small step' },
 } satisfies Record<string, SectionHeading>;
 
-export const ACADEMY_ROWS = [
-  { key: 'people', emoji: '🤝', label: 'People' },
-  { key: 'english', emoji: '💬', label: 'English' },
-  { key: 'challenge', emoji: '🧩', label: 'Challenge' },
-  { key: 'opportunity', emoji: '✨', label: 'Opportunity' },
-] as const;
+export interface AcademyRow extends SectionHeading {
+  key: keyof Reading['academy_reading'];
+}
+
+/** `english` holds a line about work for staff — the model is told so in the prompt. */
+export function academyRows(role: Role): AcademyRow[] {
+  return [
+    { key: 'people', emoji: '🤝', label: 'People' },
+    role === 'staff'
+      ? { key: 'english', emoji: '💼', label: 'Work' }
+      : { key: 'english', emoji: '💬', label: 'English' },
+    { key: 'challenge', emoji: '🧩', label: 'Challenge' },
+    { key: 'opportunity', emoji: '✨', label: 'Opportunity' },
+  ];
+}

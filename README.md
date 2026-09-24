@@ -1,7 +1,7 @@
 # Academy Saju
 
-An English-language Saju (Korean Four Pillars) site for students and teachers at an English
-language academy in Cebu. See `CLAUDE.md` for the product philosophy and the result sections.
+An English-language Saju (Korean Four Pillars) site for students, teachers and staff at an
+English language academy in Cebu. See `CLAUDE.md` for the product philosophy and the result sections.
 
 > Use Saju as a mirror, not as a map.
 

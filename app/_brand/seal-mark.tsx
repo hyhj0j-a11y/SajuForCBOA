@@ -5,7 +5,7 @@
 export const PAPER = '#ffffff';
 export const INK = '#222222';
 export const MUTED = '#6a6a6a';
-export const SEAL = '#c4452f';
+export const SEAL = '#e31c5f';
 export const ELEMENT_COLORS = ['#2f7d5b', '#c4452f', '#b9822b', '#6f7c8a', '#26364f'];
 
 export function SealMark({ size, radius }: { size: number; radius: number }) {

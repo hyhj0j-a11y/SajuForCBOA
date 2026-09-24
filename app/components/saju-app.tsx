@@ -7,6 +7,7 @@ import type { SajuChart } from '@/lib/saju/display';
 import { drawShareCard } from '@/lib/share-card';
 import { BirthForm } from './birth-form';
 import { PillarsTable } from './pillars-table';
+import { SajuSnapshot } from './saju-snapshot';
 import { ReadingCards, ReadingSkeleton } from './reading-cards';
 
 const RETRY_DELAYS_MS = [1500, 3000, 6000];
@@ -188,6 +189,14 @@ export function SajuApp() {
       <Wordmark compact />
 
       {chart ? <PillarsTable chart={chart} /> : <ChartSkeleton />}
+
+      {chart ? (
+        <SajuSnapshot
+          chart={chart}
+          text={reading.status === 'done' ? reading.reading.saju_snapshot : null}
+          pending={reading.status === 'loading' || reading.status === 'busy'}
+        />
+      ) : null}
 
       {reading.status === 'done' ? (
         <ReadingCards reading={reading.reading} role={values.role} />

@@ -1,6 +1,6 @@
 import type { Reading, Role } from '@/lib/ai/schema';
 import {
-  ACADEMY_ROWS,
+  academyRows,
   NUDGES,
   sectionHeadings,
   type SectionHeading,
@@ -15,7 +15,7 @@ function Card({ heading, children }: { heading: SectionHeading; children: React.
   return (
     <section className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-5">
       <header className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-strong text-[20px]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-seal-soft text-[20px]">
           <Emoji>{heading.emoji}</Emoji>
         </span>
         <h2 className="text-[14px] font-medium text-muted">{heading.label}</h2>
@@ -85,7 +85,7 @@ export function ReadingCards({ reading, role }: { reading: Reading; role: Role }
 
       <Card heading={heading.academy_reading}>
         <dl className="flex flex-col divide-y divide-line-soft">
-          {ACADEMY_ROWS.map((row) => (
+          {academyRows(role).map((row) => (
             <div key={row.key} className="flex gap-3 py-3 first:pt-0 last:pb-0">
               <span className="text-[18px] leading-6">
                 <Emoji>{row.emoji}</Emoji>

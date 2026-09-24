@@ -2,8 +2,9 @@
 
 /*
  * Tokens follow DESIGN.md (Airbnb system): white canvas, near-black ink, one accent used
- * sparingly, hairline borders and a single shadow tier. The accent stays our seal red rather
- * than Airbnb's Rausch, so the site keeps its own identity.
+ * sparingly, hairline borders and a single shadow tier. The accent is a pink one step deeper
+ * than Airbnb's Rausch (#ff385c): white text on Rausch is 3.5:1, below WCAG AA; on #e31c5f
+ * it is 4.6:1.
  */
 @theme {
   --color-paper: #ffffff;
@@ -15,8 +16,9 @@
   --color-muted: #6a6a6a;
   --color-line: #dddddd;
   --color-line-soft: #ebebeb;
-  --color-seal: #c4452f;
-  --color-seal-active: #a8361f;
+  --color-seal: #e31c5f;
+  --color-seal-active: #be185d;
+  --color-seal-soft: #fff0f4;
   --color-error: #c13515;
 
   --color-wood: #2f7d5b;

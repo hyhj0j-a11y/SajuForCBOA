@@ -22,7 +22,7 @@ export const birthRequestSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'must look like "16:40", or be null if unknown')
     .nullable(),
-  role: z.enum(['student', 'teacher']),
+  role: z.enum(['student', 'staff']),
 });
 
 export type BirthRequest = z.infer<typeof birthRequestSchema>;

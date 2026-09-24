@@ -46,6 +46,23 @@ export const PILLAR_LABEL = {
   hour: 'Hour',
 } as const;
 
+/**
+ * The classical image for each day stem. Fixed in code so the same chart always gets the same
+ * picture; the model is handed this image and explains it, it never invents one.
+ */
+export const DAY_MASTER_IMAGE: Record<string, { name: string; emoji: string }> = {
+  甲: { name: 'The Tall Tree', emoji: '🌲' },
+  乙: { name: 'The Flower Vine', emoji: '🌸' },
+  丙: { name: 'The Sun', emoji: '☀️' },
+  丁: { name: 'The Candle', emoji: '🕯️' },
+  戊: { name: 'The Mountain', emoji: '⛰️' },
+  己: { name: 'The Garden Soil', emoji: '🌾' },
+  庚: { name: 'The Iron Rock', emoji: '🪨' },
+  辛: { name: 'The Jewel', emoji: '💎' },
+  壬: { name: 'The Ocean', emoji: '🌊' },
+  癸: { name: 'The Rain', emoji: '🌧️' },
+};
+
 export function polarityLabel(chart: SajuChart): string {
   const { polarity, element } = chart.dayMaster;
   return `${polarity === 'yang' ? 'Yang' : 'Yin'} ${ELEMENT_LABEL[element]}`;

@@ -2,6 +2,7 @@ import { ApiError, GoogleGenAI } from '@google/genai';
 import type { Pillar, SajuResult } from '../saju/calculate';
 import { TEN_GOD_GROUP } from '../saju/calculate';
 import { SYSTEM_PROMPT } from './prompt';
+import { DAY_MASTER_IMAGE } from '../saju/display';
 import { readingJsonSchema, readingSchema, type Reading, type Role } from './schema';
 
 // Chosen for free-tier headroom, not for being the newest. The event puts ~100 readings through
@@ -84,6 +85,7 @@ export function buildModelInput(saju: SajuResult, role: Role) {
       name: saju.dayMaster.roman,
       element: saju.dayMaster.element,
       polarity: saju.dayMaster.polarity,
+      image: DAY_MASTER_IMAGE[saju.dayMaster.hanja].name,
     },
     element_counts: saju.elementCounts,
     strongest_element: saju.strongestElement,

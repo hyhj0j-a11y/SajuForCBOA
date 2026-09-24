@@ -58,6 +58,11 @@ describe('buildModelInput', () => {
     expect(payload).toContain('"star_group":"authority"');
   });
 
+  it('sends the classical image for the day master, fixed in code', () => {
+    // 1995-12-13 is a 戊 (Mu, yang earth) day.
+    expect(buildModelInput(WITH_TIME, 'student').day_master.image).toBe('The Mountain');
+  });
+
   it('sends a null hour pillar and time_known false when the birth time is unknown', () => {
     const payload = buildModelInput(WITHOUT_TIME, 'student');
 
@@ -124,7 +129,7 @@ describe('generateReading', () => {
   it('sends the system prompt and the JSON schema', async () => {
     generateContent.mockResolvedValue({ text: JSON.stringify(VALID_READING) });
 
-    await generateReading(WITH_TIME, 'teacher');
+    await generateReading(WITH_TIME, 'staff');
     const config = generateContent.mock.calls[0][0].config;
 
     expect(config.systemInstruction).toMatch(/HARD SAFETY RULES/);

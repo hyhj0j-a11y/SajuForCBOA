@@ -6,7 +6,7 @@ import { MAX_BIRTH_DATE, MAX_YEAR, MIN_BIRTH_DATE, MIN_YEAR } from '@/lib/birth-
 
 const ROLES = [
   { value: 'student', emoji: '🎒', label: "I'm a student" },
-  { value: 'teacher', emoji: '🧑‍🏫', label: "I'm a teacher" },
+  { value: 'staff', emoji: '🏫', label: 'I work here' },
 ] as const;
 
 const FIELD =
@@ -55,7 +55,7 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
               <span
                 className="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3
                   text-center text-[15px] font-medium text-muted transition-colors
-                  peer-checked:bg-ink peer-checked:text-white
+                  peer-checked:bg-seal peer-checked:text-white
                   peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink"
               >
                 <span aria-hidden="true">{emoji}</span>
@@ -103,7 +103,7 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
             type="checkbox"
             checked={timeUnknown}
             onChange={(event) => setTimeUnknown(event.target.checked)}
-            className="size-5 rounded accent-ink"
+            className="size-5 rounded accent-seal"
           />
           I don&apos;t know my birth time
         </label>

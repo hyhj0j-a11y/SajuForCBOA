@@ -1,5 +1,6 @@
 /** A reading that passes the schema, shared by the tests. */
 export const SAMPLE_READING = {
+  saju_snapshot: 'In Saju, you are The Mountain: steady and calm. A lot of Earth makes you the one others lean on.',
   identity: { title: 'The Quiet Mountain', body: 'You watch first and speak later.' },
   hidden_side: { title: 'The Secret Talker', body: 'With two friends, you never stop talking.' },
   english_style: {

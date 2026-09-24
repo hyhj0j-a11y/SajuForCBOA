@@ -1,6 +1,7 @@
 import type { Reading, Role } from './ai/schema';
 import type { PillarName } from './saju/calculate';
 import {
+  DAY_MASTER_IMAGE,
   ELEMENT_EMOJI,
   ELEMENT_INK,
   ELEMENT_LABEL,
@@ -9,7 +10,13 @@ import {
   polarityLabel,
   type SajuChart,
 } from './saju/display';
-import { ACADEMY_ROWS, NUDGES, sectionHeadings, type SectionHeading } from './reading-sections';
+import {
+  academyRows,
+  NUDGES,
+  SNAPSHOT_HEADING,
+  sectionHeadings,
+  type SectionHeading,
+} from './reading-sections';
 
 const WIDTH = 1080;
 const PAD = 64;
@@ -20,7 +27,7 @@ const SURFACE = '#f7f7f7';
 const INK = '#222222';
 const MUTED = '#6a6a6a';
 const LINE = '#dddddd';
-const SEAL = '#c4452f';
+const SEAL = '#e31c5f';
 
 const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 const HANJA = '"Noto Serif KR", "Songti SC", "SimSun", "Malgun Gothic", serif';
@@ -56,10 +63,12 @@ interface Section {
 /** Emoji first, then the label — canvas draws colour emoji in their own colours. */
 const tag = ({ emoji, label }: SectionHeading) => `${emoji}  ${label}`;
 
-function sectionsOf(reading: Reading, role: Role): Section[] {
+function sectionsOf(chart: SajuChart, reading: Reading, role: Role): Section[] {
   const heading = sectionHeadings(role);
+  const image = DAY_MASTER_IMAGE[chart.dayMaster.hanja];
 
   return [
+    { eyebrow: tag(SNAPSHOT_HEADING), title: tag({ emoji: image.emoji, label: image.name }), body: reading.saju_snapshot },
     { eyebrow: tag(heading.identity), title: reading.identity.title, body: reading.identity.body },
     { eyebrow: tag(heading.hidden_side), title: reading.hidden_side.title, body: reading.hidden_side.body },
     {
@@ -77,7 +86,7 @@ function sectionsOf(reading: Reading, role: Role): Section[] {
     },
     {
       eyebrow: tag(heading.academy_reading),
-      rows: ACADEMY_ROWS.map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
+      rows: academyRows(role).map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
     },
     { eyebrow: tag(heading.experiment), body: reading.experiment },
     { eyebrow: tag(heading.question), title: reading.question },
@@ -200,7 +209,7 @@ function render(
   }
 
   // ── Sections ──────────────────────────────────────────────────────────────
-  for (const section of sectionsOf(reading, role)) {
+  for (const section of sectionsOf(chart, reading, role)) {
     y += 72;
     text(section.eyebrow, PAD, `500 26px ${SANS}`, MUTED);
 

@@ -21,7 +21,7 @@ function sample(index: number) {
   return {
     birthDate: `${1960 + (index % 50)}-${pad(1 + (index % 12))}-${pad(1 + (index % 28))}`,
     birthTime: index % 5 === 0 ? null : `${pad(index % 24)}:${pad((index * 7) % 60)}`,
-    role: index % 3 === 0 ? 'teacher' : 'student',
+    role: index % 3 === 0 ? 'staff' : 'student',
   };
 }
 

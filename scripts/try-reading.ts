@@ -16,7 +16,7 @@ const SAMPLES: Array<{ name: string; birth: SajuInput; role: Role }> = [
   {
     name: 'Teacher, birth time known',
     birth: { year: 1978, month: 2, day: 20, time: '07:40' },
-    role: 'teacher',
+    role: 'staff',
   },
 ];
 
@@ -47,6 +47,7 @@ async function main() {
     const reading = await generateReading(saju, sample.role);
     const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
+    console.log(`0. [saju_snapshot] ${reading.saju_snapshot}`);
     const titled = ['identity', 'hidden_side', 'english_style', 'cebu_mode', 'challenge'] as const;
     titled.forEach((key, index) => {
       const section = reading[key];

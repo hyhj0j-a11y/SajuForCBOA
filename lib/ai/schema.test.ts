@@ -56,6 +56,7 @@ describe('readingJsonSchema', () => {
 
   it('lists the sections in display order, which is the order Gemini writes them', () => {
     expect(Object.keys((readingJsonSchema as { properties: object }).properties)).toEqual([
+      'saju_snapshot',
       'identity',
       'hidden_side',
       'english_style',

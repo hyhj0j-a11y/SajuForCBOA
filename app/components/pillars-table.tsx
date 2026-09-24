@@ -59,7 +59,7 @@ export function PillarsTable({ chart }: { chart: SajuChart }) {
   return (
     <section className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-5">
       <header className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-strong text-[20px]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-seal-soft text-[20px]">
           <span aria-hidden="true">🏛️</span>
         </span>
         <h2 className="text-[14px] font-medium text-muted">Your Four Pillars</h2>

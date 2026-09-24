@@ -34,6 +34,7 @@ describe('POST /api/reading — validation', () => {
     ['a body that is not JSON', 'not json at all'],
     ['a missing role', { birthDate: '1995-12-13', birthTime: null }],
     ['an unknown role', { ...GOOD, role: 'principal' }],
+    ['the retired teacher role', { ...GOOD, role: 'teacher' }],
     ['a birth date in the wrong format', { ...GOOD, birthDate: '13/12/1995' }],
     ['a birth date before 1940', { ...GOOD, birthDate: '1939-12-31' }],
     ['a birth date after 2015', { ...GOOD, birthDate: '2016-01-01' }],
@@ -96,9 +97,9 @@ describe('POST /api/reading — success', () => {
   });
 
   it('passes the role through to the reader', async () => {
-    await post({ ...GOOD, role: 'teacher' });
+    await post({ ...GOOD, role: 'staff' });
 
-    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'teacher', expect.any(Number));
+    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'staff', expect.any(Number));
   });
 
   it('serves a repeat of the same birth details from cache, without a second model call', async () => {
@@ -120,7 +121,7 @@ describe('POST /api/reading — success', () => {
 
   it('treats a different role as a different reading', async () => {
     await post(GOOD);
-    await post({ ...GOOD, role: 'teacher' });
+    await post({ ...GOOD, role: 'staff' });
 
     expect(generateReading).toHaveBeenCalledTimes(2);
   });
