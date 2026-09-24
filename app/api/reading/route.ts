@@ -1,59 +1,31 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { withModelSlot, ServerBusyError } from '@/lib/ai/queue';
+import { readingKey, withReadingCache } from '@/lib/ai/reading-cache';
 import { generateReading } from '@/lib/ai/reading';
+import { readBirthRequest } from '@/lib/birth-input';
+import { clientKey, isRateLimited } from '@/lib/rate-limit';
 import { calculateSaju } from '@/lib/saju/calculate';
 
 export const runtime = 'nodejs';
 
-const MIN_YEAR = 1940;
-const MAX_YEAR = 2015;
+/** Vercel's ceiling on the Hobby plan. The budget below stays under it with room to respond. */
+export const maxDuration = 60;
 
-const requestSchema = z.object({
-  birthDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'must look like "1995-12-13"')
-    .refine((value) => {
-      const year = Number(value.slice(0, 4));
-      return year >= MIN_YEAR && year <= MAX_YEAR;
-    }, `year must be between ${MIN_YEAR} and ${MAX_YEAR}`)
-    .refine((value) => {
-      const [year, month, day] = value.split('-').map(Number);
-      const probe = new Date(Date.UTC(year, month - 1, day));
-      return (
-        probe.getUTCFullYear() === year &&
-        probe.getUTCMonth() === month - 1 &&
-        probe.getUTCDate() === day
-      );
-    }, 'is not a real date'),
-  birthTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'must look like "16:40", or be null if unknown')
-    .nullable(),
-  role: z.enum(['student', 'teacher']),
-});
+/** Queue wait and model calls together may use this much before we give up and say "busy". */
+const SERVER_BUDGET_MS = 50_000;
 
-/** Field name and message only — never the submitted values, which carry birth data. */
-function fieldErrors(error: z.ZodError): Array<{ field: string; message: string }> {
-  return error.issues.map((issue) => ({
-    field: issue.path.join('.') || 'body',
-    message: issue.message,
-  }));
-}
+const BUSY = 'Lots of people are reading their Saju right now. Please try again in a moment.';
 
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Body must be JSON.' }, { status: 400 });
+  const deadline = Date.now() + SERVER_BUDGET_MS;
+
+  if (isRateLimited(clientKey(request))) {
+    return NextResponse.json({ error: BUSY }, { status: 429 });
   }
 
-  const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Check your birth details.', fields: fieldErrors(parsed.error) },
-      { status: 400 }
-    );
+  const parsed = await readBirthRequest(request);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error, fields: parsed.fields }, { status: 400 });
   }
 
   const { birthDate, birthTime, role } = parsed.data;
@@ -67,12 +39,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Check your birth details.' }, { status: 400 });
   }
 
+  // `saju.input` is the birth data the client already holds — it is not echoed back.
+  const pillars = { ...saju, input: undefined };
+
   try {
-    const reading = await generateReading(saju, role);
-    // `saju.input` is the birth data the client already holds — it is not echoed back.
-    const pillars = { ...saju, input: undefined };
+    const reading = await withReadingCache(readingKey(birthDate, birthTime, role), () =>
+      withModelSlot(() => generateReading(saju, role, deadline), deadline)
+    );
     return NextResponse.json({ pillars, reading });
   } catch (error) {
+    if (error instanceof ServerBusyError) {
+      return NextResponse.json({ error: BUSY }, { status: 503 });
+    }
     // Safe to log: these messages describe the model call, not the reader.
     console.error('reading generation failed:', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'The reading could not be created. Try again.' }, { status: 502 });

@@ -10,15 +10,29 @@ language academy in Cebu. See `CLAUDE.md` for the product philosophy and the res
 Next.js (App Router) + TypeScript + Tailwind CSS. Saju math is done in code with
 `lunar-javascript`; the LLM only interprets the structured result.
 
-## Setup
+## Run it locally
+
+Needs Node.js 20 or newer.
 
 ```bash
 npm install
 cp .env.local.example .env.local   # then paste your Gemini key
+npm run dev                        # http://localhost:3000
 ```
 
-`GEMINI_API_KEY` is read only in server code. `.env.local` is gitignored.
-`GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`.
+To try it on a phone, open `http://<your-PC-LAN-IP>:3000` on the same Wi-Fi.
+
+## Environment variables
+
+| Name | Required | Default | What it does |
+| --- | --- | --- | --- |
+| `GEMINI_API_KEY` | yes | — | Google AI Studio key. Read only in server code, never sent to the browser. |
+| `GEMINI_MODEL` | no | `gemini-3.5-flash-lite` | Model for the reading. Check its free-tier **daily** quota before a live event. |
+| `MAX_CONCURRENT` | no | `10` | Gemini calls in flight at once, per server instance. Extra requests queue for up to 12 s, then get a 503 "busy, try again". |
+| `RATE_LIMIT_PER_WINDOW` | no | `120` | Requests per IP per 10 s. Loose on purpose: the whole room shares one Wi-Fi IP. |
+
+`.env.local` is gitignored (`.env*` with only `.env.local.example` allowed back in). None of these
+variables has a `NEXT_PUBLIC_` prefix, so none of them can reach the client bundle.
 
 ## Commands
 
@@ -29,7 +43,24 @@ npm test             # vitest run
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
 npm run try-reading  # three sample readings in the terminal (needs a real key)
+npm run load-test    # 100 readings over 30 s against BASE_URL (default http://localhost:3000)
+npm run make-qr      # public/qr.png (2048 px) for https://sajuforcboa.vercel.app
 ```
+
+## Privacy: birth data is never stored
+
+Birth date and time exist only for the length of one request.
+
+- **No database, no files, no analytics.** Nothing is written to disk.
+- **No logs of birth data.** Validation errors quote the input, so the routes neither log nor
+  return them. The only `console.error` is for a failed model call, and its message describes
+  the call, not the reader.
+- **The model never sees the birth data.** Gemini receives the calculated chart only.
+- **The cache holds a hash, not the input.** Readings are cached in memory for 30 minutes under a
+  SHA-256 of `date|time|role`, so two identical requests cost one model call. The cache is lost
+  on every restart and is never shared between server instances.
+- **The rate limiter keys on IP only**, in memory, for 10 seconds, never next to birth data.
+- **The share card is drawn in the browser.** The PNG is never uploaded.
 
 ## Saju engine
 
@@ -81,9 +112,9 @@ what this engine reports and counts. Many almanacs instead leave the slot blank 
 show one fewer Bigyeon than this one. A full chart has 8 Ten Gods (4 stems + 4 branches); a
 three-pillar chart has 6.
 
-> **Consequence for result section 4.** Every chart carries this Bigyeon, so `peer` is inflated
+> **Consequence for the reading.** Every chart carries this Bigyeon, so `peer` is inflated
 > by exactly 1 for everyone. A plain `peer > authority` comparison would push every user toward
-> "group class". Section 4 has to compare on `peer - 1` against `authority`, or use a threshold
+> "group class". The model input has to compare on `peer - 1` against `authority`, or use a threshold
 > that subtracts the constant some other way. This is a known trap — do not compare the raw
 > counts.
 
@@ -116,6 +147,34 @@ into the B1 English reading.
 JSON Schema cannot express "max 40 words", so the limits reach Gemini only as field descriptions
 and are enforced by zod afterwards. When validation fails, the request is sent a second time with
 the validation error appended, then gives up. Two attempts, never more.
+
+## Deploy to Vercel
+
+1. Push the repo to GitHub (check first that `git ls-files | grep env` shows only
+   `.env.local.example`).
+2. On [vercel.com](https://vercel.com) → **Add New… → Project** → import the GitHub repo.
+   Vercel detects Next.js; keep the default build settings.
+3. Before the first deploy, open **Environment Variables** and add `GEMINI_API_KEY` (and any
+   optional variable from the table above) for **Production** and **Preview**.
+4. **Deploy.** The production URL is `https://<project>.vercel.app`.
+5. After changing an environment variable, redeploy (**Deployments → ⋯ → Redeploy**). A running
+   deployment does not pick up new values.
+
+Link previews and icons need no setup: `app/opengraph-image.tsx`, `app/icon.tsx` and
+`app/apple-icon.tsx` are rendered at build time, and on Vercel the absolute `og:image` URL comes
+from the production domain automatically.
+
+### Before the presentation
+
+```bash
+BASE_URL=https://<project>.vercel.app npm run load-test   # 100 readings over 30 s
+```
+
+Each request is a real Gemini call (the inputs are all distinct), so a run spends about 100
+requests of the daily quota. Run it once, not on the day of the talk.
+
+The QR code for the slide is `public/qr.png` (2048 px, black on white), made by `npm run make-qr`.
+Pass another URL to point it somewhere else: `npm run make-qr -- https://…`.
 
 ## Tests
 

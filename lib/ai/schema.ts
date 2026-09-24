@@ -2,11 +2,6 @@ import { z } from 'zod';
 
 export type Role = 'student' | 'teacher';
 
-const LEARNER_LABELS = {
-  student: ['Input learner', 'Output learner', 'Balanced learner'],
-  teacher: ['Explainer', 'Listener', 'Balanced teacher'],
-} as const;
-
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -26,40 +21,46 @@ function words(max: number, hint: string) {
     .meta({ description: `${hint} Maximum ${max} words.` });
 }
 
-export function readingSchema(role: Role) {
-  return z.object({
-    element_line: z.object({
-      title: words(6, 'A vivid metaphor for the day master element, as a short phrase.'),
-      body: words(40, 'Explain the metaphor and tie it to the day master element.'),
-    }),
-    learner_type: z.object({
-      label: z.enum(LEARNER_LABELS[role]),
-      body: words(
-        60,
-        'Compare the Resource star count with the Output star count, and name both numbers.'
-      ),
-      tip: words(25, 'One practical study or teaching habit that fits this balance.'),
-    }),
-    classroom: z.object({
-      label: words(5, 'A short name for how this person works in a classroom.'),
-      body: words(
-        60,
-        'Compare the Peer star count with the Authority star count, and name both numbers. Say whether group classes or one-on-one classes fit better.'
-      ),
-    }),
-    challenge: z.object({
-      element: words(4, 'The weakest or missing element this challenge comes from.'),
-      body: words(50, 'What this element being weak or missing makes harder at the academy.'),
-      action: words(25, 'One small, concrete thing to do at the academy this week.'),
-    }),
-    question: words(20, 'One reflective question to ask yourself this month. Not a prediction.'),
-  });
-}
+const TITLE_HINT = 'An invented, memorable 2-5 word name grounded in the data, e.g. "The Quiet Mountain".';
 
-export type Reading = z.infer<ReturnType<typeof readingSchema>>;
+/** Fields are declared in the order they are shown — Gemini writes them in schema order. */
+export const readingSchema = z.object({
+  identity: z.object({
+    title: words(5, TITLE_HINT),
+    body: words(40, 'Who this person is, as a situation they would recognise.'),
+  }),
+  hidden_side: z.object({
+    title: words(5, TITLE_HINT),
+    body: words(45, 'A side of them that other people at the academy may not see at first.'),
+  }),
+  english_style: z.object({
+    title: words(5, TITLE_HINT),
+    body: words(50, 'How they use English, grounded in a classroom or speaking scene.'),
+    action: words(20, 'One small thing to try.'),
+  }),
+  cebu_mode: z.object({
+    title: words(5, TITLE_HINT),
+    body: words(50, 'What life at the academy in Cebu looks like for them, specifically.'),
+  }),
+  challenge: z.object({
+    title: words(5, TITLE_HINT),
+    body: words(45, 'One challenge at the academy, written as a scene, not a judgment.'),
+    action: words(20, 'One small, concrete, doable action at the academy.'),
+  }),
+  academy_reading: z.object({
+    people: words(18, 'One line on how they are with people at the academy.'),
+    english: words(18, 'One line on their English.'),
+    challenge: words(18, 'One line on their challenge.'),
+    opportunity: words(18, 'One line on the opportunity the academy gives them.'),
+  }),
+  experiment: words(25, 'A fun, dare-like micro-challenge. Not homework.'),
+  question: words(20, 'A reflective question to ask yourself. Not a prediction.'),
+});
 
-export function readingJsonSchema(role: Role): Record<string, unknown> {
-  const jsonSchema = z.toJSONSchema(readingSchema(role)) as Record<string, unknown>;
+export type Reading = z.infer<typeof readingSchema>;
+
+export const readingJsonSchema: Record<string, unknown> = (() => {
+  const jsonSchema = z.toJSONSchema(readingSchema) as Record<string, unknown>;
   delete jsonSchema.$schema;
   return jsonSchema;
-}
+})();

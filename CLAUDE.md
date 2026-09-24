@@ -31,12 +31,18 @@ It is shown at the end of an English presentation titled "Who decides your futur
 - English level of all output text: CEFR B1. Short sentences. Any Saju term gets a plain explanation in parentheses.
 
 ## Result sections (fixed order)
-1. Your Four Pillars — the calculated table (proof it's not random)
-2. Your element in one line — day master as a metaphor
-3. Input or Output learner — balance of Resource (인성) vs Output (식상) stars
-4. In the classroom — Peer (비겁) vs Authority (관성) stars: group class vs one-on-one
-5. Your challenge here — from the weakest/missing element, ends with an action
-6. One question to ask yourself this month — a reflective question, not a prediction
+The calculated Four Pillars table always comes first (proof it's not random).
+Then the reading, in these 8 sections (JSON keys, schema in `lib/ai/schema.ts`):
+1. `identity` — who you are: invented title + body
+2. `hidden_side` — a side people don't see at first: title + body
+3. `english_style` — how you use English, a classroom/speaking scene: title + body + action
+4. `cebu_mode` — your life at the academy in Cebu: title + body
+5. `challenge` — one challenge, as a scene: title + body + a small, doable action
+6. `academy_reading` — four one-liners: people, english, challenge, opportunity
+7. `experiment` — a fun, dare-like micro-challenge (not homework)
+8. `question` — a reflective question, not a prediction
+
+Titles are invented 2–5 word names ("The Quiet Mountain"), never fixed category labels.
 
 ## Ten Gods → academy mapping
 - Output (식신/상관): speaking, writing, self-expression

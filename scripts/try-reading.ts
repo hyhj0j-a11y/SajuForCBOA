@@ -27,7 +27,7 @@ function chart(saju: ReturnType<typeof calculateSaju>): string {
 }
 
 async function main() {
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   console.log(`Model: ${model}\n`);
 
   for (const sample of SAMPLES) {
@@ -47,17 +47,18 @@ async function main() {
     const reading = await generateReading(saju, sample.role);
     const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
-    console.log(`1. ${reading.element_line.title}`);
-    console.log(`   ${reading.element_line.body}`);
-    console.log(`2. ${reading.learner_type.label}`);
-    console.log(`   ${reading.learner_type.body}`);
-    console.log(`   Tip: ${reading.learner_type.tip}`);
-    console.log(`3. ${reading.classroom.label}`);
-    console.log(`   ${reading.classroom.body}`);
-    console.log(`4. Challenge — ${reading.challenge.element}`);
-    console.log(`   ${reading.challenge.body}`);
-    console.log(`   Action: ${reading.challenge.action}`);
-    console.log(`5. ${reading.question}`);
+    const titled = ['identity', 'hidden_side', 'english_style', 'cebu_mode', 'challenge'] as const;
+    titled.forEach((key, index) => {
+      const section = reading[key];
+      console.log(`${index + 1}. [${key}] ${section.title}`);
+      console.log(`   ${section.body}`);
+      if ('action' in section) console.log(`   Action: ${section.action}`);
+    });
+    console.log('6. [academy_reading]');
+    for (const [key, line] of Object.entries(reading.academy_reading)) console.log(`   ${key}: ${line}`);
+    console.log(`7. [experiment] ${reading.experiment}`);
+    console.log(`8. [question] ${reading.question}`);
+
     console.log(`\n(${seconds}s)\n`);
   }
 }

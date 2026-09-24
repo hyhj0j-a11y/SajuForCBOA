@@ -1,43 +1,36 @@
 import { describe, expect, it } from 'vitest';
+import { SAMPLE_READING as VALID } from './reading.fixture';
 import { countWords, readingJsonSchema, readingSchema } from './schema';
-
-const VALID = {
-  element_line: { title: 'A lamp in a room', body: 'Your day master is Earth.' },
-  learner_type: { label: 'Input learner', body: 'You have two Resource stars.', tip: 'Read daily.' },
-  classroom: { label: 'Quiet but steady', body: 'You have one Peer star.' },
-  challenge: { element: 'fire', body: 'You have no Fire.', action: 'Ask one question in class.' },
-  question: 'What do I avoid saying out loud?',
-};
 
 describe('readingSchema', () => {
   it('accepts a well-formed reading', () => {
-    expect(readingSchema('student').safeParse(VALID).success).toBe(true);
+    expect(readingSchema.safeParse(VALID).success).toBe(true);
   });
 
   it('rejects a title over its word limit', () => {
-    const tooLong = {
-      ...VALID,
-      element_line: { ...VALID.element_line, title: 'A lamp burning in a very dark room' },
-    };
-    const result = readingSchema('student').safeParse(tooLong);
+    const tooLong = { ...VALID, identity: { ...VALID.identity, title: 'The Very Quiet Old Green Mountain' } };
+    const result = readingSchema.safeParse(tooLong);
 
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toMatch(/6 words or fewer/);
+    expect(result.error?.issues[0].message).toMatch(/5 words or fewer/);
+  });
+
+  it('rejects an academy_reading line over 18 words', () => {
+    const line = Array.from({ length: 19 }, () => 'word').join(' ');
+    const tooLong = { ...VALID, academy_reading: { ...VALID.academy_reading, people: line } };
+
+    expect(readingSchema.safeParse(tooLong).success).toBe(false);
   });
 
   it('rejects an empty field', () => {
-    const empty = { ...VALID, question: '   ' };
-
-    expect(readingSchema('student').safeParse(empty).success).toBe(false);
+    expect(readingSchema.safeParse({ ...VALID, question: '   ' }).success).toBe(false);
   });
 
-  it('accepts student labels only for students, and teacher labels only for teachers', () => {
-    const asTeacher = { ...VALID, learner_type: { ...VALID.learner_type, label: 'Explainer' } };
+  it('rejects a reading with a section missing', () => {
+    const missing: Partial<typeof VALID> = { ...VALID };
+    delete missing.experiment;
 
-    expect(readingSchema('student').safeParse(VALID).success).toBe(true);
-    expect(readingSchema('student').safeParse(asTeacher).success).toBe(false);
-    expect(readingSchema('teacher').safeParse(asTeacher).success).toBe(true);
-    expect(readingSchema('teacher').safeParse(VALID).success).toBe(false);
+    expect(readingSchema.safeParse(missing).success).toBe(false);
   });
 });
 
@@ -50,26 +43,27 @@ describe('countWords', () => {
 
 describe('readingJsonSchema', () => {
   it('drops $schema, which Gemini does not accept', () => {
-    expect(readingJsonSchema('student')).not.toHaveProperty('$schema');
+    expect(readingJsonSchema).not.toHaveProperty('$schema');
   });
 
   it('carries the word limits into the descriptions the model sees', () => {
-    const schema = readingJsonSchema('student') as {
-      properties: { element_line: { properties: { title: { description: string } } } };
+    const schema = readingJsonSchema as {
+      properties: { identity: { properties: { title: { description: string } } } };
     };
 
-    expect(schema.properties.element_line.properties.title.description).toMatch(/Maximum 6 words/);
+    expect(schema.properties.identity.properties.title.description).toMatch(/Maximum 5 words/);
   });
 
-  it('swaps the learner label enum for the role', () => {
-    const labelEnum = (role: 'student' | 'teacher') =>
-      (
-        readingJsonSchema(role) as {
-          properties: { learner_type: { properties: { label: { enum: string[] } } } };
-        }
-      ).properties.learner_type.properties.label.enum;
-
-    expect(labelEnum('student')).toEqual(['Input learner', 'Output learner', 'Balanced learner']);
-    expect(labelEnum('teacher')).toEqual(['Explainer', 'Listener', 'Balanced teacher']);
+  it('lists the sections in display order, which is the order Gemini writes them', () => {
+    expect(Object.keys((readingJsonSchema as { properties: object }).properties)).toEqual([
+      'identity',
+      'hidden_side',
+      'english_style',
+      'cebu_mode',
+      'challenge',
+      'academy_reading',
+      'experiment',
+      'question',
+    ]);
   });
 });

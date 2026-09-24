@@ -1,16 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetModelQueue } from '@/lib/ai/queue';
+import { resetReadingCache } from '@/lib/ai/reading-cache';
+import { resetRateLimit } from '@/lib/rate-limit';
 import { POST } from './route';
+import { SAMPLE_READING } from '@/lib/ai/reading.fixture';
 
 const { generateReading } = vi.hoisted(() => ({ generateReading: vi.fn() }));
 vi.mock('@/lib/ai/reading', () => ({ generateReading }));
 
-const READING = {
-  element_line: { title: 'A lamp in a room', body: 'Your day master is Earth.' },
-  learner_type: { label: 'Input learner', body: 'You have two Resource stars.', tip: 'Read daily.' },
-  classroom: { label: 'Quiet but steady', body: 'You have one Peer star.' },
-  challenge: { element: 'fire', body: 'You have no Fire.', action: 'Ask one question in class.' },
-  question: 'What do I avoid saying out loud?',
-};
+// The cache, the queue and the rate limiter all live for the life of the process.
+beforeEach(() => {
+  resetReadingCache();
+  resetModelQueue();
+  resetRateLimit();
+});
+
+const READING = SAMPLE_READING;
 
 function post(body: unknown) {
   return POST(
@@ -93,7 +98,31 @@ describe('POST /api/reading — success', () => {
   it('passes the role through to the reader', async () => {
     await post({ ...GOOD, role: 'teacher' });
 
-    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'teacher');
+    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'teacher', expect.any(Number));
+  });
+
+  it('serves a repeat of the same birth details from cache, without a second model call', async () => {
+    await post(GOOD);
+    const second = await post(GOOD);
+
+    expect(second.status).toBe(200);
+    expect(await second.json()).toHaveProperty('reading', READING);
+    expect(generateReading).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts one generation for simultaneous requests with the same birth details', async () => {
+    const [first, second] = await Promise.all([post(GOOD), post(GOOD)]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(generateReading).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats a different role as a different reading', async () => {
+    await post(GOOD);
+    await post({ ...GOOD, role: 'teacher' });
+
+    expect(generateReading).toHaveBeenCalledTimes(2);
   });
 });
 
