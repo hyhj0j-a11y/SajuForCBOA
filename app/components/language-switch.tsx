@@ -16,11 +16,12 @@ export function LanguageSwitch({
   onChange: (lang: Lang) => void;
 }) {
   return (
-    <nav aria-label="Language" className="flex items-center gap-2">
-      <span aria-hidden="true" className="text-[18px]">
-        🌐
-      </span>
-      <div className="flex flex-wrap gap-2">
+    <nav aria-label="Language">
+      {/* The globe sits in the same wrapping row, so it stays next to the first pill on a phone. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span aria-hidden="true" className="text-[18px]">
+          🌐
+        </span>
         {LANGS.map((lang) => {
           const active = lang === value;
           return (

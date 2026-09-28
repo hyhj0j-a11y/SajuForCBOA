@@ -5,12 +5,14 @@ An English-language Saju (Korean Four Pillars) website for international student
 It is shown at the end of an English presentation titled "Who decides your future?" via a QR code. Up to 100 people will open it at the same moment.
 
 ## Core philosophy (must be reflected in every feature and text)
-- "Use Saju as a mirror, not as a map."
+- "You're the driver. Saju is just a passenger." (The talk ends: "Invite Saju along as your
+  passenger for a minute. Enjoy the ride — just remember: you're still the driver.")
 - Results focus on SELF-UNDERSTANDING, not prediction.
 - Never predict dates, lucky/unlucky periods, exam results, health, money, marriage, or relationships.
 - Every weakness or challenge must end with a concrete, doable action.
 - Tone: warm, honest, playful. Not flattering, not scary.
-- Footer on the result page: "Use Saju as a mirror, not as a map."
+- Footer on the result page: "Enjoy the ride — you're still the driver." / "Saju is just a
+  passenger. Where do you want to drive next?"
 
 ## Tech stack
 - Next.js (App Router) + TypeScript + Tailwind CSS

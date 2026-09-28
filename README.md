@@ -3,7 +3,7 @@
 An English-language Saju (Korean Four Pillars) site for students, teachers and staff at an
 English language academy in Cebu. See `CLAUDE.md` for the product philosophy and the result sections.
 
-> Use Saju as a mirror, not as a map.
+> You're the driver. Saju is just a passenger.
 
 ## Stack
 

@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 const description =
-  "Your Four Pillars in plain English — a mirror for how you learn, not a map of your future.";
+  "Your Four Pillars in plain English. Invite Saju along as your passenger for a minute — you're still the driver.";
 
 /**
  * No `metadataBase`: on Vercel, Next.js falls back to the production URL for the absolute
@@ -16,7 +16,7 @@ const description =
  * `opengraph-image.tsx` in this folder.
  */
 export const metadata: Metadata = {
-  title: "Academy Saju — a mirror, not a map",
+  title: "Academy Saju — you're the driver",
   description,
   applicationName: "Academy Saju",
   openGraph: {

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { ELEMENT_COLORS, INK, MUTED, PAPER, SEAL, SealMark } from './_brand/seal-mark';
 
-export const alt = 'Academy Saju — your Four Pillars in plain English. Use Saju as a mirror, not as a map.';
+export const alt = "Academy Saju — your Four Pillars in plain English. You're the driver; Saju just rides along.";
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -31,13 +31,13 @@ export default function OpengraphImage() {
             Who decides your future?
           </div>
           <div style={{ fontSize: 36, color: MUTED, lineHeight: 1.35 }}>
-            Your Four Pillars, read back in plain English — as a mirror for how you learn.
+            Your Four Pillars in plain English. Invite Saju along as your passenger for a minute.
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 32, fontWeight: 600, color: SEAL }}>
-            Use Saju as a mirror, not as a map.
+            You&apos;re still the driver.
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             {ELEMENT_COLORS.map((color) => (

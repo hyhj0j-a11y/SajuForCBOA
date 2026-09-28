@@ -244,11 +244,11 @@ export function SajuApp() {
         <Wordmark />
         <div className="-mt-2 flex flex-col gap-2">
           <h1 className="text-[28px] font-bold leading-tight tracking-[-0.3px] text-ink">
-            Who decides your future? <span aria-hidden="true">🪞</span>
+            Who decides your future? <span aria-hidden="true">🚗</span>
           </h1>
           <p className="text-[16px] leading-normal text-body">
-            Your Four Pillars, worked out from your birthday and read back in plain English — as a
-            mirror for how you learn.
+            Your Four Pillars, worked out from your birthday and read back in plain English. Invite
+            Saju along as your passenger for a minute — you&apos;re still the driver.
           </p>
         </div>
         <BirthForm initial={values} initialPlace={place} error={formError} onSubmit={start} />
@@ -320,7 +320,7 @@ export function SajuApp() {
 
         <footer className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-6 text-center">
           <p className="text-[15px] font-medium text-ink">
-            <span aria-hidden="true">🪞</span> {UI[lang].motto}
+            <span aria-hidden="true">🚗</span> {UI[lang].motto}
           </p>
           <p className="text-[14px] text-muted">{UI[lang].mottoSub}</p>
         </footer>
@@ -363,7 +363,7 @@ function Wordmark({ compact = false }: { compact?: boolean }) {
         <span className="text-[17px] font-semibold leading-tight text-ink">Academy Saju</span>
         {!compact ? (
           <span className="text-[13px] leading-tight text-muted">
-            Use Saju as a mirror, not as a map.
+            You&apos;re the driver. Saju just rides along.
           </span>
         ) : null}
       </div>
