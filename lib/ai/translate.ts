@@ -8,7 +8,13 @@ import {
   REQUEST_TIMEOUT_MS,
   SDK_RETRY_OPTIONS,
 } from './reading';
-import { translatedReadingJsonSchema, translatedReadingSchema, type Reading } from './schema';
+import {
+  isStudentReading,
+  translatedJsonSchema,
+  translatedNormalSchema,
+  translatedStudentSchema,
+  type Reading,
+} from './schema';
 
 const MAX_ATTEMPTS = 2;
 
@@ -49,6 +55,7 @@ export async function translateReading(
 ): Promise<Reading> {
   const { ai, model } = geminiClient();
   const payload = JSON.stringify(reading);
+  const role = isStudentReading(reading) ? 'student' : 'normal';
   const systemInstruction = translationPrompt(lang, dayStem);
 
   let lastProblem = 'unknown';
@@ -69,7 +76,7 @@ export async function translateReading(
           config: {
             systemInstruction,
             responseMimeType: 'application/json',
-            responseJsonSchema: translatedReadingJsonSchema,
+            responseJsonSchema: translatedJsonSchema[role],
             temperature: 0.3,
             httpOptions: { timeout: REQUEST_TIMEOUT_MS, retryOptions: SDK_RETRY_OPTIONS },
           },
@@ -90,7 +97,7 @@ export async function translateReading(
       continue;
     }
 
-    const validated = translatedReadingSchema.safeParse(parsed);
+    const validated = (role === 'student' ? translatedStudentSchema : translatedNormalSchema).safeParse(parsed);
     if (validated.success) return validated.data;
     lastProblem = formatIssues(validated.error);
   }

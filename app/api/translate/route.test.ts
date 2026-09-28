@@ -13,7 +13,7 @@ beforeEach(() => {
   resetModelQueue();
   resetRateLimit();
   translateReading.mockReset();
-  translateReading.mockResolvedValue({ ...SAMPLE_READING, experiment: '下次多問一個問題。' });
+  translateReading.mockResolvedValue({ ...SAMPLE_READING, question: '下次多問一個問題？' });
 });
 
 function post(body: unknown) {
@@ -37,7 +37,7 @@ describe('POST /api/translate — validation', () => {
     ['a reading with a field missing', { ...GOOD, reading: { ...SAMPLE_READING, question: undefined } }],
     [
       'a field longer than the reading allows',
-      { ...GOOD, reading: { ...SAMPLE_READING, experiment: 'word '.repeat(200) } },
+      { ...GOOD, reading: { ...SAMPLE_READING, question: 'word '.repeat(200) } },
     ],
   ])('rejects %s with 400', async (_label, body) => {
     const response = await post(body);
@@ -53,7 +53,7 @@ describe('POST /api/translate — success', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.reading.experiment).toBe('下次多問一個問題。');
+    expect(body.reading.question).toBe('下次多問一個問題？');
     expect(translateReading).toHaveBeenCalledWith(SAMPLE_READING, 'zh-TW', '戊', expect.any(Number));
   });
 

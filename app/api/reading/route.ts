@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withModelSlot, ServerBusyError } from '@/lib/ai/queue';
 import { readingKey, withReadingCache } from '@/lib/ai/reading-cache';
-import { generateReading } from '@/lib/ai/reading';
+import { buildModelInput, generateReading } from '@/lib/ai/reading';
 import { readBirthRequest } from '@/lib/birth-input';
 import { clientKey, isRateLimited } from '@/lib/rate-limit';
 import { calculateSaju } from '@/lib/saju/calculate';
@@ -28,12 +28,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error, fields: parsed.fields }, { status: 400 });
   }
 
-  const { birthDate, birthTime, role } = parsed.data;
+  const { birthDate, birthTime, role, place } = parsed.data;
   const [year, month, day] = birthDate.split('-').map(Number);
 
   let saju;
   try {
-    saju = calculateSaju({ year, month, day, time: birthTime });
+    saju = calculateSaju({ year, month, day, time: birthTime, place });
   } catch {
     // The thrown message quotes the birth data, so it is neither logged nor returned.
     return NextResponse.json({ error: 'Check your birth details.' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const pillars = { ...saju, input: undefined };
 
   try {
-    const reading = await withReadingCache(readingKey(birthDate, birthTime, role), () =>
+    const reading = await withReadingCache(readingKey(buildModelInput(saju, role)), () =>
       withModelSlot(() => generateReading(saju, role, deadline), deadline)
     );
     return NextResponse.json({ pillars, reading });

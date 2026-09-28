@@ -3,10 +3,12 @@
 import { useId, useState } from 'react';
 import type { BirthRequest } from '@/lib/birth-input';
 import { MAX_BIRTH_DATE, MAX_YEAR, MIN_BIRTH_DATE, MIN_YEAR } from '@/lib/birth-range';
+import type { Place } from '@/lib/places/types';
+import { BirthplaceField } from './birthplace-field';
 
 const ROLES = [
-  { value: 'student', emoji: '🎒', label: "I'm a student" },
-  { value: 'staff', emoji: '🏫', label: 'I work here' },
+  { value: 'student', emoji: '🎒', label: 'Student', hint: 'Your life at the academy in Cebu.' },
+  { value: 'normal', emoji: '🙂', label: 'Normal', hint: 'A general Saju reading about you.' },
 ] as const;
 
 const FIELD =
@@ -16,13 +18,15 @@ const FIELD =
 
 interface Props {
   initial: BirthRequest;
+  initialPlace: Place | null;
   error: string | null;
-  onSubmit: (values: BirthRequest) => void;
+  onSubmit: (values: BirthRequest, place: Place | null) => void;
 }
 
-export function BirthForm({ initial, error, onSubmit }: Props) {
+export function BirthForm({ initial, initialPlace, error, onSubmit }: Props) {
   const ids = useId();
   const [role, setRole] = useState(initial.role);
+  const [place, setPlace] = useState(initialPlace);
   const [birthDate, setBirthDate] = useState(initial.birthDate);
   const [birthTime, setBirthTime] = useState(initial.birthTime ?? '');
   const [timeUnknown, setTimeUnknown] = useState(initial.birthTime === null);
@@ -36,7 +40,18 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
         event.preventDefault();
         if (sent) return;
         setSent(true);
-        onSubmit({ birthDate, birthTime: timeUnknown ? null : birthTime, role });
+        onSubmit(
+          {
+            birthDate,
+            birthTime: timeUnknown ? null : birthTime,
+            role,
+            // Only what the chart needs goes to the server — not the place's name.
+            place: place
+              ? { latitude: place.latitude, longitude: place.longitude, timezone: place.timezone }
+              : null,
+          },
+          place
+        );
       }}
     >
       <fieldset className="flex flex-col gap-3">
@@ -64,6 +79,9 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
             </label>
           ))}
         </div>
+        <p className="text-center text-[13px] text-muted">
+          {ROLES.find((option) => option.value === role)?.hint}
+        </p>
       </fieldset>
 
       <div className="flex flex-col gap-3">
@@ -108,6 +126,8 @@ export function BirthForm({ initial, error, onSubmit }: Props) {
           I don&apos;t know my birth time
         </label>
       </div>
+
+      <BirthplaceField value={place} onChange={setPlace} />
 
       {error ? (
         <p role="alert" className="rounded-lg bg-error/10 px-4 py-3 text-[15px] text-error">

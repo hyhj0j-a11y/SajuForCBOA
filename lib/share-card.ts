@@ -1,4 +1,4 @@
-import type { Reading, Role } from './ai/schema';
+import type { Reading } from './ai/schema';
 import type { PillarName } from './saju/calculate';
 import {
   dayMasterImage,
@@ -10,13 +10,7 @@ import {
   polarityLabel,
   type SajuChart,
 } from './saju/display';
-import {
-  academyRows,
-  nudges,
-  snapshotHeading,
-  sectionHeadings,
-  type SectionHeading,
-} from './reading-sections';
+import { readingSections, snapshotHeading, tryThis, type SectionHeading } from './reading-sections';
 import { isCjk, UI, type Lang } from './i18n';
 
 const WIDTH = 1080;
@@ -66,41 +60,28 @@ interface Section {
   eyebrow: string;
   title?: string;
   body?: string;
-  rows?: ReadonlyArray<{ label: string; text: string }>;
   nudge?: { label: string; text: string };
 }
 
 /** Emoji first, then the label — canvas draws colour emoji in their own colours. */
 const tag = ({ emoji, label }: SectionHeading) => `${emoji}  ${label}`;
 
-function sectionsOf(chart: SajuChart, reading: Reading, role: Role, lang: Lang): Section[] {
-  const heading = sectionHeadings(role, lang);
-  const nudge = nudges(lang);
+function sectionsOf(chart: SajuChart, reading: Reading, lang: Lang): Section[] {
   const image = dayMasterImage(chart.dayMaster.hanja, lang);
+  const nudge = tag(tryThis(lang));
 
   return [
     { eyebrow: tag(snapshotHeading(lang)), title: tag({ emoji: image.emoji, label: image.name }), body: reading.saju_snapshot },
-    { eyebrow: tag(heading.identity), title: reading.identity.title, body: reading.identity.body },
-    { eyebrow: tag(heading.hidden_side), title: reading.hidden_side.title, body: reading.hidden_side.body },
-    {
-      eyebrow: tag(heading.english_style),
-      title: reading.english_style.title,
-      body: reading.english_style.body,
-      nudge: { label: tag(nudge.tryThis), text: reading.english_style.action },
-    },
-    { eyebrow: tag(heading.cebu_mode), title: reading.cebu_mode.title, body: reading.cebu_mode.body },
-    {
-      eyebrow: tag(heading.challenge),
-      title: reading.challenge.title,
-      body: reading.challenge.body,
-      nudge: { label: tag(nudge.smallStep), text: reading.challenge.action },
-    },
-    {
-      eyebrow: tag(heading.academy_reading),
-      rows: academyRows(role, lang).map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
-    },
-    { eyebrow: tag(heading.experiment), body: reading.experiment },
-    { eyebrow: tag(heading.question), title: reading.question },
+    ...readingSections(reading, lang).map((section): Section =>
+      section.isQuestion
+        ? { eyebrow: tag(section.heading), title: section.body }
+        : {
+            eyebrow: tag(section.heading),
+            title: section.title,
+            body: section.body,
+            nudge: section.action ? { label: nudge, text: section.action } : undefined,
+          }
+    ),
   ];
 }
 
@@ -112,7 +93,6 @@ function render(
   ctx: CanvasRenderingContext2D,
   chart: SajuChart,
   reading: Reading,
-  role: Role,
   lang: Lang,
   draw: boolean
 ): number {
@@ -226,7 +206,7 @@ function render(
   }
 
   // ── Sections ──────────────────────────────────────────────────────────────
-  for (const section of sectionsOf(chart, reading, role, lang)) {
+  for (const section of sectionsOf(chart, reading, lang)) {
     y += 72;
     text(section.eyebrow, PAD, `500 26px ${SANS}`, MUTED);
 
@@ -238,13 +218,6 @@ function render(
     if (section.body) {
       y += 12;
       paragraph(section.body, PAD, CONTENT, `400 30px ${SANS}`, '#3f3f3f', 44);
-    }
-
-    for (const row of section.rows ?? []) {
-      y += 44;
-      text(row.label, PAD, `600 24px ${SANS}`, INK);
-      y -= 4;
-      paragraph(row.text, PAD, CONTENT, `400 30px ${SANS}`, '#3f3f3f', 44);
     }
 
     if (section.nudge) {
@@ -284,21 +257,21 @@ function render(
   return y + 72;
 }
 
-export function drawShareCard(chart: SajuChart, reading: Reading, role: Role, lang: Lang = 'en'): HTMLCanvasElement {
+export function drawShareCard(chart: SajuChart, reading: Reading, lang: Lang = 'en'): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = 10;
 
   const measure = canvas.getContext('2d');
   if (!measure) throw new Error('Canvas is not available in this browser.');
-  const height = render(measure, chart, reading, role, lang, false);
+  const height = render(measure, chart, reading, lang, false);
 
   canvas.height = Math.ceil(height);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is not available in this browser.');
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, WIDTH, canvas.height);
-  render(ctx, chart, reading, role, lang, true);
+  render(ctx, chart, reading, lang, true);
 
   return canvas;
 }

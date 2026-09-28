@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import type { Reading } from '@/lib/ai/schema';
 import type { BirthRequest } from '@/lib/birth-input';
 import { UI, type Lang, type TranslatedLang } from '@/lib/i18n';
+import type { Place } from '@/lib/places/types';
 import type { SajuChart } from '@/lib/saju/display';
 import { drawShareCard } from '@/lib/share-card';
 import { BirthForm } from './birth-form';
@@ -23,7 +24,7 @@ type ReadingState =
   | { status: 'done'; reading: Reading }
   | { status: 'failed' };
 
-const EMPTY: BirthRequest = { birthDate: '', birthTime: '', role: 'student' };
+const EMPTY: BirthRequest = { birthDate: '', birthTime: '', role: 'student', place: null };
 
 function post(path: string, body: unknown, signal: AbortSignal) {
   return fetch(path, {
@@ -50,6 +51,7 @@ function sleep(ms: number, signal: AbortSignal) {
 
 export function SajuApp() {
   const [values, setValues] = useState<BirthRequest>(EMPTY);
+  const [place, setPlace] = useState<Place | null>(null);
   const [onResult, setOnResult] = useState(false);
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [reading, setReading] = useState<ReadingState>({ status: 'loading' });
@@ -124,12 +126,13 @@ export function SajuApp() {
     }
   }
 
-  function start(next: BirthRequest) {
+  function start(next: BirthRequest, nextPlace: Place | null) {
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
 
     setValues(next);
+    setPlace(nextPlace);
     setFormError(null);
     setShareError(null);
     setOnResult(true);
@@ -210,7 +213,7 @@ export function SajuApp() {
     setSharing(true);
     setShareError(null);
     try {
-      const canvas = drawShareCard(chart, shown ?? reading.reading, values.role, lang);
+      const canvas = drawShareCard(chart, shown ?? reading.reading, lang);
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error('The image could not be created.');
 
@@ -248,7 +251,7 @@ export function SajuApp() {
             mirror for how you learn.
           </p>
         </div>
-        <BirthForm initial={values} error={formError} onSubmit={start} />
+        <BirthForm initial={values} initialPlace={place} error={formError} onSubmit={start} />
       </div>
     );
   }
@@ -279,7 +282,7 @@ export function SajuApp() {
         ) : null}
       </div>
 
-      {chart ? <PillarsTable chart={chart} /> : <ChartSkeleton />}
+      {chart ? <PillarsTable chart={chart} placeName={place?.name ?? null} /> : <ChartSkeleton />}
 
       {/* `lang` lets the phone pick Traditional, Simplified or Japanese glyphs for the same characters. */}
       <div lang={lang} className="contents">
@@ -293,7 +296,7 @@ export function SajuApp() {
         ) : null}
 
         {shown ? (
-          <ReadingCards reading={shown} role={values.role} lang={lang} />
+          <ReadingCards reading={shown} lang={lang} />
         ) : reading.status === 'failed' ? (
           <section role="alert" className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-5">
             <h2 className="text-[18px] font-semibold text-ink">

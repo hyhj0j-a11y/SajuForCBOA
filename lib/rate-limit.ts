@@ -23,7 +23,7 @@ export function clientKey(request: Request): string {
   return forwarded?.split(',')[0]?.trim() || 'local';
 }
 
-export function isRateLimited(key: string): boolean {
+export function isRateLimited(key: string, max: number = limit()): boolean {
   const now = Date.now();
 
   for (const [existing, window] of hits) {
@@ -37,7 +37,7 @@ export function isRateLimited(key: string): boolean {
   }
 
   window.count += 1;
-  return window.count > limit();
+  return window.count > max;
 }
 
 /** Test seam — the buckets are process-wide. */

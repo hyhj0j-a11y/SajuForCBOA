@@ -56,9 +56,15 @@ Birth date and time exist only for the length of one request.
   return them. The only `console.error` is for a failed model call, and its message describes
   the call, not the reader.
 - **The model never sees the birth data.** Gemini receives the calculated chart only.
-- **The cache holds a hash, not the input.** Readings are cached in memory for 30 minutes under a
-  SHA-256 of `date|time|role`, so two identical requests cost one model call. The cache is lost
-  on every restart and is never shared between server instances.
+- **The cache holds a hash of the chart, not the input.** Readings are cached in memory for 30
+  minutes under a SHA-256 of exactly what the model is sent (chart + role), so everyone with the
+  same chart costs one model call. The cache is lost on every restart and is never shared between
+  server instances.
+- **The birthplace is reduced to coordinates in the browser.** The place search (`POST
+  /api/places`, POST so the query stays out of URL logs) matches a bundled list and forgets the
+  query. The reading routes receive only latitude, longitude and time zone — never the place name.
+  Only a search the bundled list cannot answer is passed to Open-Meteo's geocoder, as the typed
+  name alone.
 - **The rate limiter keys on IP only**, in memory, for 10 seconds, never next to birth data.
 - **The share card is drawn in the browser.** The PNG is never uploaded.
 
@@ -66,7 +72,21 @@ Birth date and time exist only for the length of one request.
 
 `lib/saju/calculate.ts` exports `calculateSaju(input)`.
 
-**Input** — the Gregorian (solar) birth date, plus `time` as `"HH:mm"` or `null` when unknown.
+**Input** — the Gregorian (solar) birth date, plus `time` as `"HH:mm"` or `null` when unknown,
+and an optional `place` (`{ longitude, timezone }`).
+
+**Birthplace correction** (`lib/saju/solar-time.ts`). With a place, the clock time is corrected to
+local mean solar time — 4 minutes per degree of longitude away from the time zone's meridian
+(Seoul −32 min, Tokyo +19, Cebu +16). The UTC offset comes from the IANA database via `Intl`, so
+summer time and old offsets count (Korea 1987–88 summer time, UTC+8:30 in 1954–61). Year and
+month pillars are read at the birth instant (solar terms are one moment worldwide); day and hour
+pillars from the local sun. The equation of time (±16 min) is left out, as in most Korean
+almanacs. Without a place, the clock time is used as it is.
+
+**Place search** (`lib/places/`, `data/cities.json`). 66k places from GeoNames (CC BY 4.0,
+https://www.geonames.org): every city of 15,000+ people, plus districts for KR, JP, TW, CN, PH,
+VN, TH and MN, Korean 동 and Cebu-area barangays — each with its names in local scripts
+(서울, 東京, 臺中, 세부). Rebuild with `scripts/build-cities.ts` (instructions at its top).
 
 **Output** — the four pillars (hanja, Korean romanization, element, yin/yang), the day master,
 element counts, Ten God counts, the same counts folded into five groups

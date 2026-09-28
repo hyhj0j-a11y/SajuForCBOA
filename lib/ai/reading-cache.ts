@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Lang } from '../i18n';
-import type { Reading, Role } from './schema';
+import type { Reading } from './schema';
 
 const TTL_MS = 30 * 60_000;
 const MAX_ENTRIES = 500;
@@ -67,11 +67,12 @@ const readings = createCache<Reading>();
 const translations = createCache<Reading>();
 
 /**
- * The birth data never reaches memory — only this digest of it. Two people born at the same
- * minute in the same role share a key, which is the point: one model call serves both.
+ * Keyed by exactly what the model is sent — the calculated chart and the role — so the birth
+ * data never reaches memory, not even as a digest. Everyone with the same chart in the same
+ * role shares a key, which is the point: one model call serves them all.
  */
-export function readingKey(birthDate: string, birthTime: string | null, role: Role): string {
-  return createHash('sha256').update(`${birthDate}|${birthTime ?? 'unknown'}|${role}`).digest('hex');
+export function readingKey(modelInput: object): string {
+  return createHash('sha256').update(JSON.stringify(modelInput)).digest('hex');
 }
 
 /** Keyed by the English text itself, so the same reading is translated once per language. */

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildModelInput, generateReading } from './reading';
 import { calculateSaju } from '../saju/calculate';
-import { SAMPLE_READING } from './reading.fixture';
+import { SAMPLE_MODEL_ANSWER, SAMPLE_NORMAL_MODEL_ANSWER, SAMPLE_NORMAL_READING, SAMPLE_READING } from './reading.fixture';
 
 const { generateContent, MockApiError } = vi.hoisted(() => ({
   generateContent: vi.fn(),
@@ -21,6 +21,7 @@ vi.mock('@google/genai', () => ({
 }));
 
 const VALID_READING = SAMPLE_READING;
+const MODEL_ANSWER = SAMPLE_MODEL_ANSWER;
 
 const WITH_TIME = calculateSaju({ year: 1995, month: 12, day: 13, time: '16:40' });
 const WITHOUT_TIME = calculateSaju({ year: 2001, month: 8, day: 9, time: null });
@@ -91,7 +92,7 @@ describe('generateReading', () => {
   });
 
   it('returns the reading when the first answer validates', async () => {
-    generateContent.mockResolvedValue({ text: JSON.stringify(VALID_READING) });
+    generateContent.mockResolvedValue({ text: JSON.stringify(MODEL_ANSWER) });
 
     await expect(generateReading(WITH_TIME, 'student')).resolves.toEqual(VALID_READING);
     expect(generateContent).toHaveBeenCalledTimes(1);
@@ -99,12 +100,12 @@ describe('generateReading', () => {
 
   it('retries once when the answer breaks a word limit, and tells the model what broke', async () => {
     const tooLong = {
-      ...VALID_READING,
-      identity: { ...VALID_READING.identity, title: 'The Very Quiet Old Green Mountain' },
+      ...MODEL_ANSWER,
+      identity: { ...MODEL_ANSWER.identity, title: 'The Very Quiet Old Green Mountain' },
     };
     generateContent
       .mockResolvedValueOnce({ text: JSON.stringify(tooLong) })
-      .mockResolvedValueOnce({ text: JSON.stringify(VALID_READING) });
+      .mockResolvedValueOnce({ text: JSON.stringify(MODEL_ANSWER) });
 
     await expect(generateReading(WITH_TIME, 'student')).resolves.toEqual(VALID_READING);
     expect(generateContent).toHaveBeenCalledTimes(2);
@@ -114,7 +115,7 @@ describe('generateReading', () => {
   it('retries once when the answer is not JSON', async () => {
     generateContent
       .mockResolvedValueOnce({ text: 'Sorry, I cannot do that.' })
-      .mockResolvedValueOnce({ text: JSON.stringify(VALID_READING) });
+      .mockResolvedValueOnce({ text: JSON.stringify(MODEL_ANSWER) });
 
     await expect(generateReading(WITH_TIME, 'student')).resolves.toEqual(VALID_READING);
     expect(generateContent).toHaveBeenCalledTimes(2);
@@ -127,19 +128,26 @@ describe('generateReading', () => {
     expect(generateContent).toHaveBeenCalledTimes(2);
   });
 
-  it('sends the system prompt and the JSON schema', async () => {
-    generateContent.mockResolvedValue({ text: JSON.stringify(VALID_READING) });
+  it('sends the system prompt and the schema for the role', async () => {
+    generateContent.mockResolvedValue({ text: JSON.stringify(SAMPLE_NORMAL_MODEL_ANSWER) });
 
-    await generateReading(WITH_TIME, 'staff');
+    await expect(generateReading(WITH_TIME, 'normal')).resolves.toEqual(SAMPLE_NORMAL_READING);
     const config = generateContent.mock.calls[0][0].config;
 
-    expect(config.systemInstruction).toMatch(/HARD SAFETY RULES/);
+    expect(config.systemInstruction).toMatch(/HARD RULES/);
     expect(config.responseMimeType).toBe('application/json');
-    expect(Object.keys(config.responseJsonSchema.properties)).toContain('academy_reading');
+    expect(Object.keys(config.responseJsonSchema.properties)).toContain('life_pattern');
+    expect(Object.keys(config.responseJsonSchema.properties)).not.toContain('english_style');
+  });
+
+  it('never hands the private plan on to the reader', async () => {
+    generateContent.mockResolvedValue({ text: JSON.stringify(MODEL_ANSWER) });
+
+    expect(await generateReading(WITH_TIME, 'student')).not.toHaveProperty('plan');
   });
 
   it('defaults to a Flash model and honours GEMINI_MODEL when set', async () => {
-    generateContent.mockResolvedValue({ text: JSON.stringify(VALID_READING) });
+    generateContent.mockResolvedValue({ text: JSON.stringify(MODEL_ANSWER) });
 
     await generateReading(WITH_TIME, 'student');
     expect(generateContent.mock.calls[0][0].model).toBe('gemini-3.5-flash-lite');
@@ -150,7 +158,7 @@ describe('generateReading', () => {
   });
 
   it('bounds every attempt with a request timeout and leaves the backoff to us', async () => {
-    generateContent.mockResolvedValue({ text: JSON.stringify(VALID_READING) });
+    generateContent.mockResolvedValue({ text: JSON.stringify(MODEL_ANSWER) });
 
     await generateReading(WITH_TIME, 'student');
     const { httpOptions } = generateContent.mock.calls[0][0].config;
@@ -189,7 +197,7 @@ describe('generateReading', () => {
   it('succeeds on a retry after a transient 429', async () => {
     generateContent
       .mockRejectedValueOnce(new MockApiError(429, 'quota exceeded'))
-      .mockResolvedValueOnce({ text: JSON.stringify(VALID_READING) });
+      .mockResolvedValueOnce({ text: JSON.stringify(MODEL_ANSWER) });
 
     await expect(generateReading(WITH_TIME, 'student')).resolves.toEqual(VALID_READING);
     expect(generateContent).toHaveBeenCalledTimes(2);

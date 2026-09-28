@@ -1,4 +1,4 @@
-import type { Reading, Role } from './ai/schema';
+import { isStudentReading, type Reading } from './ai/schema';
 import { UI, type Lang } from './i18n';
 
 export interface SectionHeading {
@@ -10,48 +10,44 @@ export function snapshotHeading(lang: Lang = 'en'): SectionHeading {
   return { emoji: '🔎', label: UI[lang].snapshot };
 }
 
+export function tryThis(lang: Lang = 'en'): SectionHeading {
+  return { emoji: '👉', label: UI[lang].tryThis };
+}
+
+export interface ReadingSection {
+  key: string;
+  heading: SectionHeading;
+  title?: string;
+  body: string;
+  /** The one small experiment, shown as a "Try this" nudge. */
+  action?: string;
+  /** The closing question is shown larger, with no title. */
+  isQuestion?: boolean;
+}
+
 /**
- * Section headings, shared by the result page and the share card so the two never drift apart.
- * The emojis live here, not in the prompt: fixed per section, they cost the model no words and
- * never vary between readings.
+ * The reading in the order it is shown, shared by the result page and the share card so the two
+ * never drift apart. The emojis live here, not in the prompt: fixed per section, they cost the
+ * model no words and never vary between readings. The role is read off the reading's own shape.
  */
-export function sectionHeadings(role: Role, lang: Lang = 'en') {
+export function readingSections(reading: Reading, lang: Lang = 'en'): ReadingSection[] {
   const t = UI[lang];
-  const staff = role === 'staff';
-  return {
-    identity: { emoji: '🪞', label: t.identity },
-    hidden_side: { emoji: '🌙', label: t.hiddenSide },
-    english_style: staff
-      ? { emoji: '💼', label: t.workStyle }
-      : { emoji: '🗣️', label: t.englishStyle },
-    cebu_mode: { emoji: '🏝️', label: t.cebuMode },
-    challenge: { emoji: '🧗', label: t.challenge },
-    academy_reading: { emoji: '📝', label: t.academyReading },
-    experiment: { emoji: '🧪', label: t.experiment },
-    question: { emoji: '💭', label: t.question },
-  } satisfies Record<string, SectionHeading>;
-}
 
-export function nudges(lang: Lang = 'en') {
-  return {
-    tryThis: { emoji: '👉', label: UI[lang].tryThis },
-    smallStep: { emoji: '👣', label: UI[lang].smallStep },
-  } satisfies Record<string, SectionHeading>;
-}
+  const middle: ReadingSection[] = isStudentReading(reading)
+    ? [
+        { key: 'english_style', heading: { emoji: '🗣️', label: t.englishStyle }, ...reading.english_style },
+        { key: 'cebu_mode', heading: { emoji: '🏝️', label: t.cebuMode }, ...reading.cebu_mode },
+      ]
+    : [
+        { key: 'life_pattern', heading: { emoji: '🧭', label: t.lifePattern }, ...reading.life_pattern },
+        { key: 'people_style', heading: { emoji: '🤝', label: t.peopleStyle }, ...reading.people_style },
+      ];
 
-export interface AcademyRow extends SectionHeading {
-  key: keyof Reading['academy_reading'];
-}
-
-/** `english` holds a line about work for staff — the model is told so in the prompt. */
-export function academyRows(role: Role, lang: Lang = 'en'): AcademyRow[] {
-  const t = UI[lang];
   return [
-    { key: 'people', emoji: '🤝', label: t.rowPeople },
-    role === 'staff'
-      ? { key: 'english', emoji: '💼', label: t.rowWork }
-      : { key: 'english', emoji: '💬', label: t.rowEnglish },
-    { key: 'challenge', emoji: '🧩', label: t.rowChallenge },
-    { key: 'opportunity', emoji: '✨', label: t.rowOpportunity },
+    { key: 'identity', heading: { emoji: '🪞', label: t.identity }, ...reading.identity },
+    { key: 'hidden_side', heading: { emoji: '🌙', label: t.hiddenSide }, ...reading.hidden_side },
+    ...middle,
+    { key: 'blind_spot', heading: { emoji: '🙈', label: t.blindSpot }, ...reading.blind_spot },
+    { key: 'question', heading: { emoji: '💭', label: t.question }, body: reading.question, isQuestion: true },
   ];
 }

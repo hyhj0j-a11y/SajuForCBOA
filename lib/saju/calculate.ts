@@ -1,4 +1,5 @@
 import { Solar } from 'lunar-javascript';
+import { correctForBirthplace, type BirthPlace, type Wall } from './solar-time';
 import { measureStrength, type StrengthResult } from './strength';
 
 export type Element = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
@@ -45,11 +46,12 @@ export interface SajuInput {
   month: number;
   day: number;
   /**
-   * Clock time at the place of birth, "HH:mm", 24-hour.
-   * Used exactly as given — no time zone or longitude correction.
-   * `null` means the birth time is unknown.
+   * Clock time at the place of birth, "HH:mm", 24-hour. `null` means the birth time is unknown.
+   * Corrected to local solar time when `place` is given; used exactly as given when it is not.
    */
   time: string | null;
+  /** Birthplace longitude and time zone. Optional — see `solar-time.ts`. */
+  place?: BirthPlace | null;
 }
 
 export interface SajuResult {
@@ -71,6 +73,11 @@ export interface SajuResult {
    */
   strength: StrengthResult;
   missingElements: Element[];
+  /**
+   * How the birthplace moved the clock time, or `null` when no place was given. Minutes only —
+   * the client already knows the clock time, so no birth time is sent back.
+   */
+  timeCorrection: { minutes: number; utcOffsetMinutes: number } | null;
 }
 
 /*
@@ -241,6 +248,14 @@ function buildPillar(dayMaster: Sign, stem: Sign, branch: Sign): Pillar {
   };
 }
 
+function eightCharAt(wall: Wall) {
+  const eightChar = Solar.fromYmdHms(wall.year, wall.month, wall.day, wall.hour, wall.minute, 0)
+    .getLunar()
+    .getEightChar();
+  eightChar.setSect(LUNAR_SECT_DAY_STARTS_AT_23);
+  return eightChar;
+}
+
 export function calculateSaju(input: SajuInput): SajuResult {
   assertValidDate(input.year, input.month, input.day);
   const timeKnown = input.time !== null;
@@ -248,31 +263,22 @@ export function calculateSaju(input: SajuInput): SajuResult {
     ? parseTime(input.time as string)
     : { hour: UNKNOWN_TIME_REFERENCE_HOUR, minute: 0 };
 
-  const eightChar = Solar.fromYmdHms(input.year, input.month, input.day, hour, minute, 0)
-    .getLunar()
-    .getEightChar();
-  eightChar.setSect(LUNAR_SECT_DAY_STARTS_AT_23);
+  const clock: Wall = { year: input.year, month: input.month, day: input.day, hour, minute };
 
-  const dayMaster = signOfStem(eightChar.getDayGan());
+  // With a birthplace, the year and month come from the birth instant and the day and hour from
+  // the local sun (see solar-time.ts). Without one, the clock time is read as it is.
+  const corrected = input.place ? correctForBirthplace(clock, input.place) : null;
+  const terms = eightCharAt(corrected?.termWall ?? clock);
+  const sun = corrected ? eightCharAt(corrected.solarWall) : terms;
+
+  const dayMaster = signOfStem(sun.getDayGan());
 
   const pillars = {
-    year: buildPillar(
-      dayMaster,
-      signOfStem(eightChar.getYearGan()),
-      signOfBranch(eightChar.getYearZhi())
-    ),
-    month: buildPillar(
-      dayMaster,
-      signOfStem(eightChar.getMonthGan()),
-      signOfBranch(eightChar.getMonthZhi())
-    ),
-    day: buildPillar(dayMaster, dayMaster, signOfBranch(eightChar.getDayZhi())),
+    year: buildPillar(dayMaster, signOfStem(terms.getYearGan()), signOfBranch(terms.getYearZhi())),
+    month: buildPillar(dayMaster, signOfStem(terms.getMonthGan()), signOfBranch(terms.getMonthZhi())),
+    day: buildPillar(dayMaster, dayMaster, signOfBranch(sun.getDayZhi())),
     hour: timeKnown
-      ? buildPillar(
-          dayMaster,
-          signOfStem(eightChar.getTimeGan()),
-          signOfBranch(eightChar.getTimeZhi())
-        )
+      ? buildPillar(dayMaster, signOfStem(sun.getTimeGan()), signOfBranch(sun.getTimeZhi()))
       : null,
   };
 
@@ -319,5 +325,8 @@ export function calculateSaju(input: SajuInput): SajuResult {
     tenGodGroups,
     strength: measureStrength(named, dayMaster),
     missingElements: ELEMENT_ORDER.filter((e) => elementCounts[e] === 0),
+    timeCorrection: corrected
+      ? { minutes: corrected.correctionMinutes, utcOffsetMinutes: corrected.utcOffsetMinutes }
+      : null,
   };
 }

@@ -37,19 +37,12 @@ export interface UiText {
   identity: string;
   hiddenSide: string;
   englishStyle: string;
-  workStyle: string;
   cebuMode: string;
-  challenge: string;
-  academyReading: string;
-  experiment: string;
+  lifePattern: string;
+  peopleStyle: string;
+  blindSpot: string;
   question: string;
   tryThis: string;
-  smallStep: string;
-  rowPeople: string;
-  rowEnglish: string;
-  rowWork: string;
-  rowChallenge: string;
-  rowOpportunity: string;
   strongest: string;
   noVisible: string;
   dayMasterStrength: string;
@@ -68,19 +61,12 @@ export const UI: Record<Lang, UiText> = {
     identity: 'Who you are',
     hiddenSide: 'Your hidden side',
     englishStyle: 'Your English style',
-    workStyle: 'Your work style',
     cebuMode: 'You in Cebu',
-    challenge: 'Your challenge here',
-    academyReading: 'Your academy reading',
-    experiment: 'Your experiment',
+    lifePattern: 'Your life pattern',
+    peopleStyle: 'You with people',
+    blindSpot: 'Your blind spot',
     question: 'One question to ask yourself',
     tryThis: 'Try this',
-    smallStep: 'Small step',
-    rowPeople: 'People',
-    rowEnglish: 'English',
-    rowWork: 'Work',
-    rowChallenge: 'Challenge',
-    rowOpportunity: 'Opportunity',
     strongest: 'Strongest',
     noVisible: 'Not visible in the chart',
     dayMasterStrength: 'Day master',
@@ -97,19 +83,12 @@ export const UI: Record<Lang, UiText> = {
     identity: '나는 어떤 사람',
     hiddenSide: '숨겨진 나의 모습',
     englishStyle: '나의 영어 스타일',
-    workStyle: '나의 일하는 스타일',
     cebuMode: '세부에서의 나',
-    challenge: '여기서의 도전',
-    academyReading: '아카데미 리딩',
-    experiment: '나의 작은 실험',
+    lifePattern: '나의 삶의 패턴',
+    peopleStyle: '사람들 속의 나',
+    blindSpot: '나의 사각지대',
     question: '나에게 던지는 질문',
     tryThis: '해 보기',
-    smallStep: '작은 한 걸음',
-    rowPeople: '사람',
-    rowEnglish: '영어',
-    rowWork: '일',
-    rowChallenge: '도전',
-    rowOpportunity: '기회',
     strongest: '가장 강한',
     noVisible: '겉으로 드러나지 않은 오행',
     dayMasterStrength: '일간',
@@ -126,19 +105,12 @@ export const UI: Record<Lang, UiText> = {
     identity: '你是誰',
     hiddenSide: '你隱藏的一面',
     englishStyle: '你的英語風格',
-    workStyle: '你的工作風格',
     cebuMode: '在宿霧的你',
-    challenge: '你在這裡的挑戰',
-    academyReading: '你的學院解讀',
-    experiment: '你的小實驗',
+    lifePattern: '你的生活模式',
+    peopleStyle: '你與人相處',
+    blindSpot: '你的盲點',
     question: '問問自己',
     tryThis: '試試看',
-    smallStep: '小小一步',
-    rowPeople: '人際',
-    rowEnglish: '英語',
-    rowWork: '工作',
-    rowChallenge: '挑戰',
-    rowOpportunity: '機會',
     strongest: '最強',
     noVisible: '表面缺少',
     dayMasterStrength: '日主',
@@ -155,19 +127,12 @@ export const UI: Record<Lang, UiText> = {
     identity: '你是谁',
     hiddenSide: '你隐藏的一面',
     englishStyle: '你的英语风格',
-    workStyle: '你的工作风格',
     cebuMode: '在宿务的你',
-    challenge: '你在这里的挑战',
-    academyReading: '你的学院解读',
-    experiment: '你的小实验',
+    lifePattern: '你的生活模式',
+    peopleStyle: '你与人相处',
+    blindSpot: '你的盲点',
     question: '问问自己',
     tryThis: '试试看',
-    smallStep: '小小一步',
-    rowPeople: '人际',
-    rowEnglish: '英语',
-    rowWork: '工作',
-    rowChallenge: '挑战',
-    rowOpportunity: '机会',
     strongest: '最强',
     noVisible: '表面缺少',
     dayMasterStrength: '日主',
@@ -184,19 +149,12 @@ export const UI: Record<Lang, UiText> = {
     identity: 'あなたはこんな人',
     hiddenSide: 'あなたの隠れた一面',
     englishStyle: 'あなたの英語スタイル',
-    workStyle: 'あなたの仕事スタイル',
     cebuMode: 'セブでのあなた',
-    challenge: 'ここでのチャレンジ',
-    academyReading: 'アカデミーでのあなた',
-    experiment: 'あなたへの小さな実験',
+    lifePattern: 'あなたの生き方のパターン',
+    peopleStyle: '人といるときのあなた',
+    blindSpot: 'あなたの盲点',
     question: '自分に聞いてみよう',
     tryThis: 'やってみよう',
-    smallStep: '小さな一歩',
-    rowPeople: '人との関わり',
-    rowEnglish: '英語',
-    rowWork: '仕事',
-    rowChallenge: 'チャレンジ',
-    rowOpportunity: 'チャンス',
     strongest: 'いちばん強い',
     noVisible: '表に出ていない五行',
     dayMasterStrength: '日主',

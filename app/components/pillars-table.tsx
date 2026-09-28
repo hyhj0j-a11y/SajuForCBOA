@@ -55,7 +55,13 @@ function Column({ name, pillar, isDay }: { name: PillarName; pillar: Pillar | nu
   );
 }
 
-export function PillarsTable({ chart }: { chart: SajuChart }) {
+/** "−32 min" / "+16 min" / "no change" — how far the birthplace moved the clock time. */
+function signedMinutes(minutes: number): string {
+  if (minutes === 0) return 'no change';
+  return `${minutes > 0 ? '+' : '−'}${Math.abs(minutes)} min`;
+}
+
+export function PillarsTable({ chart, placeName }: { chart: SajuChart; placeName: string | null }) {
   return (
     <section className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-5">
       <header className="flex items-center gap-3">
@@ -83,6 +89,13 @@ export function PillarsTable({ chart }: { chart: SajuChart }) {
       {!chart.timeKnown ? (
         <p className="rounded-lg bg-soft px-3 py-2 text-[13px] text-muted">
           <span aria-hidden="true">🕰️</span> Time unknown — this reading uses three pillars.
+        </p>
+      ) : null}
+
+      {chart.timeCorrection && chart.timeKnown ? (
+        <p className="rounded-lg bg-soft px-3 py-2 text-[13px] text-muted">
+          <span aria-hidden="true">📍</span> {placeName ?? 'Your birthplace'}: birth time set to the local
+          sun ({signedMinutes(chart.timeCorrection.minutes)}), the way a Saju reader corrects it.
         </p>
       ) : null}
 

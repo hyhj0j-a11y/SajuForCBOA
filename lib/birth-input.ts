@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { ROLES } from './ai/schema';
 import { MAX_YEAR, MIN_YEAR } from './birth-range';
+import { isValidTimeZone } from './saju/solar-time';
 
 export const birthRequestSchema = z.object({
   birthDate: z
@@ -22,7 +24,19 @@ export const birthRequestSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'must look like "16:40", or be null if unknown')
     .nullable(),
-  role: z.enum(['student', 'staff']),
+  role: z.enum(ROLES),
+  /**
+   * Where they were born: only the longitude and time zone are used, to correct the clock time to
+   * local solar time. `null` (or absent) means no birthplace — the clock time is used as it is.
+   */
+  place: z
+    .object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+      timezone: z.string().max(64).refine(isValidTimeZone, 'is not a known time zone'),
+    })
+    .nullable()
+    .optional(),
 });
 
 export type BirthRequest = z.infer<typeof birthRequestSchema>;

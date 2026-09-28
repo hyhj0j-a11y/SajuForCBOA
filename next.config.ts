@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
    * back to a native submit that drops the birth data.
    */
   allowedDevOrigins: ['192.168.*.*', '10.*.*.*', '172.16.*.*'],
+  /** The city list is read from disk at runtime, which the bundler cannot see on its own. */
+  outputFileTracingIncludes: {
+    '/api/places': ['./data/cities.json'],
+  },
 };
 
 export default nextConfig;

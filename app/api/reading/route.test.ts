@@ -6,7 +6,10 @@ import { POST } from './route';
 import { SAMPLE_READING } from '@/lib/ai/reading.fixture';
 
 const { generateReading } = vi.hoisted(() => ({ generateReading: vi.fn() }));
-vi.mock('@/lib/ai/reading', () => ({ generateReading }));
+vi.mock('@/lib/ai/reading', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/ai/reading')>()),
+  generateReading,
+}));
 
 // The cache, the queue and the rate limiter all live for the life of the process.
 beforeEach(() => {
@@ -42,6 +45,8 @@ describe('POST /api/reading — validation', () => {
     ['a birth time in the wrong format', { ...GOOD, birthTime: '4:40 PM' }],
     ['an out-of-range birth time', { ...GOOD, birthTime: '24:00' }],
     ['a missing birth time key', { birthDate: '1995-12-13', role: 'student' }],
+    ['an unknown time zone', { ...GOOD, place: { latitude: 37.57, longitude: 126.98, timezone: 'Asia/Atlantis' } }],
+    ['a longitude off the globe', { ...GOOD, place: { latitude: 37.57, longitude: 226.98, timezone: 'Asia/Seoul' } }],
   ])('rejects %s with 400', async (_label, body) => {
     const response = await post(body);
 
@@ -79,6 +84,22 @@ describe('POST /api/reading — success', () => {
     generateReading.mockResolvedValue(READING);
   });
 
+  it('corrects the birth time to the birthplace, and says by how much', async () => {
+    const seoul = { latitude: 37.57, longitude: 126.98, timezone: 'Asia/Seoul' };
+    const body = await (await post({ ...GOOD, place: seoul })).json();
+
+    expect(body.pillars.timeCorrection).toEqual({ minutes: -32, utcOffsetMinutes: 540 });
+    expect(JSON.stringify(body)).not.toContain('16:40');
+  });
+
+  it('serves two birth times that give the same chart from one model call', async () => {
+    // 16:40 and 16:20 both fall in the 申 hour: same chart, same model input.
+    await post(GOOD);
+    await post({ ...GOOD, birthTime: '16:20' });
+
+    expect(generateReading).toHaveBeenCalledTimes(1);
+  });
+
   it('returns the calculated pillars next to the reading', async () => {
     const response = await post(GOOD);
     const body = await response.json();
@@ -97,9 +118,9 @@ describe('POST /api/reading — success', () => {
   });
 
   it('passes the role through to the reader', async () => {
-    await post({ ...GOOD, role: 'staff' });
+    await post({ ...GOOD, role: 'normal' });
 
-    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'staff', expect.any(Number));
+    expect(generateReading).toHaveBeenCalledWith(expect.anything(), 'normal', expect.any(Number));
   });
 
   it('serves a repeat of the same birth details from cache, without a second model call', async () => {
@@ -121,7 +142,7 @@ describe('POST /api/reading — success', () => {
 
   it('treats a different role as a different reading', async () => {
     await post(GOOD);
-    await post({ ...GOOD, role: 'staff' });
+    await post({ ...GOOD, role: 'normal' });
 
     expect(generateReading).toHaveBeenCalledTimes(2);
   });

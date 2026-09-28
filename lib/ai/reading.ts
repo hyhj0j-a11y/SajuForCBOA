@@ -3,7 +3,15 @@ import type { Pillar, SajuResult } from '../saju/calculate';
 import { TEN_GOD_GROUP } from '../saju/calculate';
 import { SYSTEM_PROMPT } from './prompt';
 import { DAY_MASTER_IMAGE } from '../saju/display';
-import { readingJsonSchema, readingSchema, type Reading, type Role } from './schema';
+import {
+  modelJsonSchema,
+  normalModelSchema,
+  normalReadingSchema,
+  studentModelSchema,
+  studentReadingSchema,
+  type Reading,
+  type Role,
+} from './schema';
 
 // Chosen for free-tier headroom, not for being the newest. The event puts ~100 readings through
 // in two minutes, and the preview Flash models cap the free tier at 20 requests per DAY
@@ -174,7 +182,7 @@ export async function generateReading(
           config: {
             systemInstruction: SYSTEM_PROMPT,
             responseMimeType: 'application/json',
-            responseJsonSchema: readingJsonSchema,
+            responseJsonSchema: modelJsonSchema[role],
             temperature: 0.8,
             httpOptions: { timeout: REQUEST_TIMEOUT_MS, retryOptions: SDK_RETRY_OPTIONS },
           },
@@ -195,8 +203,11 @@ export async function generateReading(
       continue;
     }
 
-    const validated = readingSchema.safeParse(parsed);
-    if (validated.success) return validated.data;
+    const validated = (role === 'student' ? studentModelSchema : normalModelSchema).safeParse(parsed);
+    if (validated.success) {
+      // The plan only steers the writing; the reader schema has no `plan`, so parsing drops it.
+      return (role === 'student' ? studentReadingSchema : normalReadingSchema).parse(validated.data);
+    }
     lastProblem = formatIssues(validated.error);
   }
 

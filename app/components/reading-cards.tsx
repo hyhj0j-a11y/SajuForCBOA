@@ -1,11 +1,6 @@
-import type { Reading, Role } from '@/lib/ai/schema';
+import type { Reading } from '@/lib/ai/schema';
 import type { Lang } from '@/lib/i18n';
-import {
-  academyRows,
-  nudges,
-  sectionHeadings,
-  type SectionHeading,
-} from '@/lib/reading-sections';
+import { readingSections, tryThis, type SectionHeading } from '@/lib/reading-sections';
 
 /** Emojis are decoration next to a text label, so screen readers skip them. */
 function Emoji({ children }: { children: string }) {
@@ -52,66 +47,26 @@ function Nudge({ nudge, children }: { nudge: SectionHeading; children: React.Rea
   );
 }
 
-export function ReadingCards({ reading, role, lang }: { reading: Reading; role: Role; lang: Lang }) {
-  const heading = sectionHeadings(role, lang);
-  const nudge = nudges(lang);
+export function ReadingCards({ reading, lang }: { reading: Reading; lang: Lang }) {
+  const nudge = tryThis(lang);
 
   return (
     <>
-      <Card heading={heading.identity}>
-        <Title>{reading.identity.title}</Title>
-        <Body>{reading.identity.body}</Body>
-      </Card>
-
-      <Card heading={heading.hidden_side}>
-        <Title>{reading.hidden_side.title}</Title>
-        <Body>{reading.hidden_side.body}</Body>
-      </Card>
-
-      <Card heading={heading.english_style}>
-        <Title>{reading.english_style.title}</Title>
-        <Body>{reading.english_style.body}</Body>
-        <Nudge nudge={nudge.tryThis}>{reading.english_style.action}</Nudge>
-      </Card>
-
-      <Card heading={heading.cebu_mode}>
-        <Title>{reading.cebu_mode.title}</Title>
-        <Body>{reading.cebu_mode.body}</Body>
-      </Card>
-
-      <Card heading={heading.challenge}>
-        <Title>{reading.challenge.title}</Title>
-        <Body>{reading.challenge.body}</Body>
-        <Nudge nudge={nudge.smallStep}>{reading.challenge.action}</Nudge>
-      </Card>
-
-      <Card heading={heading.academy_reading}>
-        <dl className="flex flex-col divide-y divide-line-soft">
-          {academyRows(role, lang).map((row) => (
-            <div key={row.key} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-              <span className="text-[18px] leading-6">
-                <Emoji>{row.emoji}</Emoji>
-              </span>
-              <div className="flex flex-col gap-0.5">
-                <dt className="text-[14px] font-semibold text-ink">{row.label}</dt>
-                <dd className="text-[15px] leading-normal text-body">
-                  {reading.academy_reading[row.key]}
-                </dd>
-              </div>
-            </div>
-          ))}
-        </dl>
-      </Card>
-
-      <Card heading={heading.experiment}>
-        <p className="text-[18px] font-medium leading-snug text-ink">{reading.experiment}</p>
-      </Card>
-
-      <Card heading={heading.question}>
-        <p className="text-[20px] font-semibold leading-snug tracking-[-0.18px] text-ink">
-          {reading.question}
-        </p>
-      </Card>
+      {readingSections(reading, lang).map((section) => (
+        <Card key={section.key} heading={section.heading}>
+          {section.isQuestion ? (
+            <p className="text-[20px] font-semibold leading-snug tracking-[-0.18px] text-ink">
+              {section.body}
+            </p>
+          ) : (
+            <>
+              {section.title ? <Title>{section.title}</Title> : null}
+              <Body>{section.body}</Body>
+              {section.action ? <Nudge nudge={nudge}>{section.action}</Nudge> : null}
+            </>
+          )}
+        </Card>
+      ))}
     </>
   );
 }

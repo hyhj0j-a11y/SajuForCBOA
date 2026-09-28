@@ -14,11 +14,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error, fields: parsed.fields }, { status: 400 });
   }
 
-  const { birthDate, birthTime } = parsed.data;
+  const { birthDate, birthTime, place } = parsed.data;
   const [year, month, day] = birthDate.split('-').map(Number);
 
   try {
-    const saju = calculateSaju({ year, month, day, time: birthTime });
+    const saju = calculateSaju({ year, month, day, time: birthTime, place });
     // `saju.input` is the birth data the client already holds — it is not echoed back.
     return NextResponse.json({ pillars: { ...saju, input: undefined } });
   } catch {
