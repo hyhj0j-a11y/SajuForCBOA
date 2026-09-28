@@ -1,7 +1,7 @@
 import type { Reading, Role } from './ai/schema';
 import type { PillarName } from './saju/calculate';
 import {
-  DAY_MASTER_IMAGE,
+  dayMasterImage,
   ELEMENT_EMOJI,
   ELEMENT_INK,
   ELEMENT_LABEL,
@@ -12,11 +12,12 @@ import {
 } from './saju/display';
 import {
   academyRows,
-  NUDGES,
-  SNAPSHOT_HEADING,
+  nudges,
+  snapshotHeading,
   sectionHeadings,
   type SectionHeading,
 } from './reading-sections';
+import { isCjk, UI, type Lang } from './i18n';
 
 const WIDTH = 1080;
 const PAD = 64;
@@ -34,12 +35,21 @@ const HANJA = '"Noto Serif KR", "Songti SC", "SimSun", "Malgun Gothic", serif';
 
 const ORDER: PillarName[] = ['year', 'month', 'day', 'hour'];
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+/** Punctuation that must not start a line in Chinese and Japanese. */
+const NO_LINE_START = /^[，。、！？：；」』）…ー〜]$/;
+
+/** Chinese and Japanese have no spaces, so they break between any two characters instead. */
+function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, cjk = false): string[] {
   const lines: string[] = [];
   let line = '';
+  const joiner = cjk ? '' : ' ';
 
-  for (const word of text.split(/\s+/)) {
-    const candidate = line ? `${line} ${word}` : word;
+  for (const word of cjk ? Array.from(text.trim()) : text.split(/\s+/)) {
+    const candidate = line ? `${line}${joiner}${word}` : word;
+    if (cjk && NO_LINE_START.test(word)) {
+      line = candidate;
+      continue;
+    }
     if (line && ctx.measureText(candidate).width > maxWidth) {
       lines.push(line);
       line = word;
@@ -63,30 +73,31 @@ interface Section {
 /** Emoji first, then the label — canvas draws colour emoji in their own colours. */
 const tag = ({ emoji, label }: SectionHeading) => `${emoji}  ${label}`;
 
-function sectionsOf(chart: SajuChart, reading: Reading, role: Role): Section[] {
-  const heading = sectionHeadings(role);
-  const image = DAY_MASTER_IMAGE[chart.dayMaster.hanja];
+function sectionsOf(chart: SajuChart, reading: Reading, role: Role, lang: Lang): Section[] {
+  const heading = sectionHeadings(role, lang);
+  const nudge = nudges(lang);
+  const image = dayMasterImage(chart.dayMaster.hanja, lang);
 
   return [
-    { eyebrow: tag(SNAPSHOT_HEADING), title: tag({ emoji: image.emoji, label: image.name }), body: reading.saju_snapshot },
+    { eyebrow: tag(snapshotHeading(lang)), title: tag({ emoji: image.emoji, label: image.name }), body: reading.saju_snapshot },
     { eyebrow: tag(heading.identity), title: reading.identity.title, body: reading.identity.body },
     { eyebrow: tag(heading.hidden_side), title: reading.hidden_side.title, body: reading.hidden_side.body },
     {
       eyebrow: tag(heading.english_style),
       title: reading.english_style.title,
       body: reading.english_style.body,
-      nudge: { label: tag(NUDGES.tryThis), text: reading.english_style.action },
+      nudge: { label: tag(nudge.tryThis), text: reading.english_style.action },
     },
     { eyebrow: tag(heading.cebu_mode), title: reading.cebu_mode.title, body: reading.cebu_mode.body },
     {
       eyebrow: tag(heading.challenge),
       title: reading.challenge.title,
       body: reading.challenge.body,
-      nudge: { label: tag(NUDGES.smallStep), text: reading.challenge.action },
+      nudge: { label: tag(nudge.smallStep), text: reading.challenge.action },
     },
     {
       eyebrow: tag(heading.academy_reading),
-      rows: academyRows(role).map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
+      rows: academyRows(role, lang).map((row) => ({ label: tag(row), text: reading.academy_reading[row.key] })),
     },
     { eyebrow: tag(heading.experiment), body: reading.experiment },
     { eyebrow: tag(heading.question), title: reading.question },
@@ -102,6 +113,7 @@ function render(
   chart: SajuChart,
   reading: Reading,
   role: Role,
+  lang: Lang,
   draw: boolean
 ): number {
   let y = 0;
@@ -130,7 +142,7 @@ function render(
 
   const paragraph = (value: string, x: number, maxWidth: number, font: string, color: string, lineHeight: number) => {
     ctx.font = font;
-    const lines = wrap(ctx, value, maxWidth);
+    const lines = wrap(ctx, value, maxWidth, isCjk(lang));
     for (const line of lines) {
       y += lineHeight;
       text(line, x, font, color);
@@ -203,13 +215,18 @@ function render(
   const counts = ELEMENTS.map((element) => `${ELEMENT_EMOJI[element]} ${ELEMENT_LABEL[element]} ${chart.elementCounts[element]}`).join("   ");
   text(counts, PAD, `400 24px ${SANS}`, MUTED);
 
+  // Visible count above, weighted strength below — the same pair the result page shows.
+  y += 38;
+  const weighted = ELEMENTS.map((element) => `${ELEMENT_EMOJI[element]} ${Math.round(chart.strength.elementScores[element])}%`).join('   ');
+  text(`Strength: ${weighted}`, PAD, `400 24px ${SANS}`, MUTED);
+
   if (!chart.timeKnown) {
     y += 38;
     text('Time unknown — this reading uses three pillars.', PAD, `400 24px ${SANS}`, MUTED);
   }
 
   // ── Sections ──────────────────────────────────────────────────────────────
-  for (const section of sectionsOf(chart, reading, role)) {
+  for (const section of sectionsOf(chart, reading, role, lang)) {
     y += 72;
     text(section.eyebrow, PAD, `500 26px ${SANS}`, MUTED);
 
@@ -234,7 +251,7 @@ function render(
       y += 26;
       const nudgeTop = y;
       ctx.font = `400 28px ${SANS}`;
-      const lines = wrap(ctx, section.nudge.text, CONTENT - 64);
+      const lines = wrap(ctx, section.nudge.text, CONTENT - 64, isCjk(lang));
       const height = 50 + lines.length * 42 + 26;
       box(PAD, nudgeTop, CONTENT, height, SURFACE, LINE);
 
@@ -260,28 +277,28 @@ function render(
   }
 
   y += 60;
-  text('Use Saju as a mirror, not as a map.', WIDTH / 2, `500 28px ${SANS}`, INK, 'center');
+  text(UI[lang].motto, WIDTH / 2, `500 28px ${SANS}`, INK, 'center');
   y += 44;
-  text('Our future is still ours to choose.', WIDTH / 2, `400 26px ${SANS}`, MUTED, 'center');
+  text(UI[lang].mottoSub, WIDTH / 2, `400 26px ${SANS}`, MUTED, 'center');
 
   return y + 72;
 }
 
-export function drawShareCard(chart: SajuChart, reading: Reading, role: Role): HTMLCanvasElement {
+export function drawShareCard(chart: SajuChart, reading: Reading, role: Role, lang: Lang = 'en'): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = 10;
 
   const measure = canvas.getContext('2d');
   if (!measure) throw new Error('Canvas is not available in this browser.');
-  const height = render(measure, chart, reading, role, false);
+  const height = render(measure, chart, reading, role, lang, false);
 
   canvas.height = Math.ceil(height);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is not available in this browser.');
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, WIDTH, canvas.height);
-  render(ctx, chart, reading, role, true);
+  render(ctx, chart, reading, role, lang, true);
 
   return canvas;
 }

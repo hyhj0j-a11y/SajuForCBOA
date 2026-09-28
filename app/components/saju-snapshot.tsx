@@ -1,11 +1,12 @@
 import {
-  DAY_MASTER_IMAGE,
+  dayMasterImage,
   ELEMENT_EMOJI,
-  ELEMENT_LABEL,
   polarityLabel,
   type SajuChart,
 } from '@/lib/saju/display';
-import { SNAPSHOT_HEADING } from '@/lib/reading-sections';
+import { ELEMENT_NAME, UI, type Lang } from '@/lib/i18n';
+import { snapshotHeading } from '@/lib/reading-sections';
+import type { Element } from '@/lib/saju/calculate';
 
 /**
  * "You, in Saju": the calculated picture first, then the model's plain-English explanation.
@@ -16,22 +17,36 @@ export function SajuSnapshot({
   chart,
   text,
   pending,
+  lang,
 }: {
   chart: SajuChart;
   text: string | null;
   pending: boolean;
+  lang: Lang;
 }) {
-  const image = DAY_MASTER_IMAGE[chart.dayMaster.hanja];
+  const image = dayMasterImage(chart.dayMaster.hanja, lang);
+  const heading = snapshotHeading(lang);
+  const t = UI[lang];
+  const elementName = ELEMENT_NAME[lang];
   const missing = chart.missingElements;
-  const strongest = chart.strongestElement;
+  const { strength } = chart;
+
+  function elementList(list: Element[]) {
+    return list.map((element) => (
+      <span key={element} className="mr-1 last:mr-0">
+        <span aria-hidden="true">{ELEMENT_EMOJI[element]}</span> {elementName[element]}{' '}
+        <span className="tabular-nums">{Math.round(strength.elementScores[element])}%</span>
+      </span>
+    ));
+  }
 
   return (
     <section className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-5">
       <header className="flex items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-seal-soft text-[20px]">
-          <span aria-hidden="true">{SNAPSHOT_HEADING.emoji}</span>
+          <span aria-hidden="true">{heading.emoji}</span>
         </span>
-        <h2 className="text-[14px] font-medium text-muted">{SNAPSHOT_HEADING.label}</h2>
+        <h2 className="text-[14px] font-medium text-muted">{heading.label}</h2>
       </header>
 
       <div className="flex items-center gap-4">
@@ -51,25 +66,25 @@ export function SajuSnapshot({
 
       <ul className="flex flex-wrap gap-2 text-[13px] font-medium text-ink">
         <li className="rounded-full bg-soft px-3 py-1.5">
-          Strongest: <span aria-hidden="true">{ELEMENT_EMOJI[strongest]}</span>{' '}
-          {ELEMENT_LABEL[strongest]} {chart.elementCounts[strongest]}
+          {t.strongest}: {elementList(strength.strongestElements)}
         </li>
-        {missing.length > 0 ? (
-          <li className="rounded-full bg-soft px-3 py-1.5">
-            Missing:{' '}
-            {missing.map((element) => (
-              <span key={element} className="mr-1 last:mr-0">
-                <span aria-hidden="true">{ELEMENT_EMOJI[element]}</span> {ELEMENT_LABEL[element]}
-              </span>
-            ))}
-          </li>
-        ) : (
-          <li className="rounded-full bg-soft px-3 py-1.5">
-            Weakest: <span aria-hidden="true">{ELEMENT_EMOJI[chart.weakestElement]}</span>{' '}
-            {ELEMENT_LABEL[chart.weakestElement]} {chart.elementCounts[chart.weakestElement]}
-          </li>
-        )}
+        <li className="rounded-full bg-soft px-3 py-1.5">
+          {t.weakest}: {elementList(strength.weakestElements)}
+        </li>
+        <li className="rounded-full bg-soft px-3 py-1.5">
+          {t.dayMasterStrength}: {t.strengthLevel[strength.dayMaster.strength]}
+        </li>
       </ul>
+      {missing.length > 0 ? (
+        <p className="-mt-2 text-[13px] text-muted">
+          {t.noVisible}:{' '}
+          {missing.map((element) => (
+            <span key={element} className="mr-1 last:mr-0">
+              <span aria-hidden="true">{ELEMENT_EMOJI[element]}</span> {elementName[element]}
+            </span>
+          ))}
+        </p>
+      ) : null}
 
       {text ? (
         <p className="text-[16px] leading-normal text-body">{text}</p>

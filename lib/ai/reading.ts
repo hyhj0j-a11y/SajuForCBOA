@@ -13,17 +13,17 @@ import { readingJsonSchema, readingSchema, type Reading, type Role } from './sch
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const MAX_ATTEMPTS = 2;
 
-const REQUEST_TIMEOUT_MS = 18_000;
+export const REQUEST_TIMEOUT_MS = 18_000;
 
 // Retrying 429/5xx is ours to do, so the SDK must not add a second layer underneath: its own
 // defaults (5 attempts, up to 60s apart) can leave one request running for minutes, which a
 // reader staring at a phone will not wait through.
-const SDK_RETRY_OPTIONS = { attempts: 1 };
+export const SDK_RETRY_OPTIONS = { attempts: 1 };
 const API_MAX_ATTEMPTS = 3;
 const API_BACKOFF_MS = [400, 1200];
 
 /** Used when no caller sets one — scripts and tests, not the route, which passes its own. */
-const DEFAULT_BUDGET_MS = 50_000;
+export const DEFAULT_BUDGET_MS = 50_000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -71,7 +71,7 @@ function describePillar(pillar: Pillar) {
  * chart, never the raw birth data.
  */
 export function buildModelInput(saju: SajuResult, role: Role) {
-  const groups = saju.tenGodGroups;
+  const { strength } = saju;
   return {
     role,
     time_known: saju.timeKnown,
@@ -87,20 +87,29 @@ export function buildModelInput(saju: SajuResult, role: Role) {
       polarity: saju.dayMaster.polarity,
       image: DAY_MASTER_IMAGE[saju.dayMaster.hanja].name,
     },
-    element_counts: saju.elementCounts,
-    strongest_element: saju.strongestElement,
-    weakest_element: saju.weakestElement,
-    missing_elements: saju.missingElements,
-    ten_god_group_counts: {
-      ...groups,
-      // The day stem is the reader, not a peer. Every chart carries that one Bigyeon, so
-      // sending the raw count would read every single reader as group-class oriented.
-      peer: groups.peer - 1,
+    day_master_strength: {
+      level: strength.dayMaster.strength,
+      support_percent: strength.dayMaster.supportPercent,
+      month_supports: strength.dayMaster.deukryeong,
+      day_branch_supports: strength.dayMaster.deukji,
+      most_others_support: strength.dayMaster.deukse,
     },
+    season: strength.season,
+    climate: strength.climate,
+    // Weighted, the way a reader weighs a chart — this, not the visible count, says which
+    // element is strong. The visible count is kept for "you have no visible Fire" moments.
+    element_strength_percent: strength.elementScores,
+    strongest_elements: strength.strongestElements,
+    weakest_elements: strength.weakestElements,
+    visible_element_counts: saju.elementCounts,
+    missing_visible_elements: saju.missingElements,
+    combinations: strength.combinations.map((c) => c.element),
+    // Weighted too, and without the day stem in `peer`: the day stem is the reader, not a peer.
+    ten_god_group_strength_percent: strength.tenGodGroupScores,
   };
 }
 
-function formatIssues(error: { issues: Array<{ path: PropertyKey[]; message: string }> }): string {
+export function formatIssues(error: { issues: Array<{ path: PropertyKey[]; message: string }> }): string {
   return error.issues.map((issue) => `${issue.path.join('.')} ${issue.message}`).join('; ');
 }
 
@@ -108,7 +117,7 @@ function formatIssues(error: { issues: Array<{ path: PropertyKey[]; message: str
  * One answer from the model, resending on 429/5xx with exponential backoff. A retry only starts
  * when the deadline still leaves room for a whole attempt, so this can never overrun the route.
  */
-async function askModel(
+export async function askModel(
   ask: () => Promise<{ text?: string }>,
   deadline: number
 ): Promise<string | undefined> {
@@ -130,18 +139,20 @@ async function askModel(
   throw new Error(describeApiFailure(lastError));
 }
 
+export function geminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not set. Copy .env.local.example to .env.local.');
+  }
+  return { ai: new GoogleGenAI({ apiKey }), model: process.env.GEMINI_MODEL || DEFAULT_MODEL };
+}
+
 export async function generateReading(
   saju: SajuResult,
   role: Role,
   deadline: number = Date.now() + DEFAULT_BUDGET_MS
 ): Promise<Reading> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set. Copy .env.local.example to .env.local.');
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const { ai, model } = geminiClient();
   const payload = JSON.stringify(buildModelInput(saju, role));
 
   let lastProblem = 'unknown';

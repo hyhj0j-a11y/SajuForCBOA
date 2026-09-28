@@ -1,7 +1,8 @@
 import type { Reading, Role } from '@/lib/ai/schema';
+import type { Lang } from '@/lib/i18n';
 import {
   academyRows,
-  NUDGES,
+  nudges,
   sectionHeadings,
   type SectionHeading,
 } from '@/lib/reading-sections';
@@ -51,8 +52,9 @@ function Nudge({ nudge, children }: { nudge: SectionHeading; children: React.Rea
   );
 }
 
-export function ReadingCards({ reading, role }: { reading: Reading; role: Role }) {
-  const heading = sectionHeadings(role);
+export function ReadingCards({ reading, role, lang }: { reading: Reading; role: Role; lang: Lang }) {
+  const heading = sectionHeadings(role, lang);
+  const nudge = nudges(lang);
 
   return (
     <>
@@ -69,7 +71,7 @@ export function ReadingCards({ reading, role }: { reading: Reading; role: Role }
       <Card heading={heading.english_style}>
         <Title>{reading.english_style.title}</Title>
         <Body>{reading.english_style.body}</Body>
-        <Nudge nudge={NUDGES.tryThis}>{reading.english_style.action}</Nudge>
+        <Nudge nudge={nudge.tryThis}>{reading.english_style.action}</Nudge>
       </Card>
 
       <Card heading={heading.cebu_mode}>
@@ -80,12 +82,12 @@ export function ReadingCards({ reading, role }: { reading: Reading; role: Role }
       <Card heading={heading.challenge}>
         <Title>{reading.challenge.title}</Title>
         <Body>{reading.challenge.body}</Body>
-        <Nudge nudge={NUDGES.smallStep}>{reading.challenge.action}</Nudge>
+        <Nudge nudge={nudge.smallStep}>{reading.challenge.action}</Nudge>
       </Card>
 
       <Card heading={heading.academy_reading}>
         <dl className="flex flex-col divide-y divide-line-soft">
-          {academyRows(role).map((row) => (
+          {academyRows(role, lang).map((row) => (
             <div key={row.key} className="flex gap-3 py-3 first:pt-0 last:pb-0">
               <span className="text-[18px] leading-6">
                 <Emoji>{row.emoji}</Emoji>

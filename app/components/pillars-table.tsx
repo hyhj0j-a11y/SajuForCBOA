@@ -103,10 +103,17 @@ export function PillarsTable({ chart }: { chart: SajuChart }) {
               <span>
                 {ELEMENT_LABEL[element]} <span className="tabular-nums">{count}</span>
               </span>
+              <span className="tabular-nums text-[12px] font-semibold">
+                {Math.round(chart.strength.elementScores[element])}%
+              </span>
             </li>
           );
         })}
       </ul>
+      <p className="text-[12px] leading-snug text-muted">
+        Number = visible characters. % = strength once hidden elements and the birth season are
+        weighed in, the way a Saju reader counts.
+      </p>
     </section>
   );
 }

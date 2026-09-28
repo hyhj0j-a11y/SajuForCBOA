@@ -70,8 +70,8 @@ Birth date and time exist only for the length of one request.
 
 **Output** — the four pillars (hanja, Korean romanization, element, yin/yang), the day master,
 element counts, Ten God counts, the same counts folded into five groups
-(`output` / `resource` / `peer` / `authority` / `wealth`), and the strongest, weakest and missing
-elements.
+(`output` / `resource` / `peer` / `authority` / `wealth`), the elements with no visible character,
+and the weighted `strength` described below.
 
 ### Rules this engine commits to
 
@@ -118,8 +118,28 @@ three-pillar chart has 6.
 > that subtracts the constant some other way. This is a known trap — do not compare the raw
 > counts.
 
-**Ties break in the fixed order** wood → fire → earth → metal → water. With three elements tied
-at the top, `strongestElement` is whichever comes first in that order.
+**Strength is weighted, not counted** (`lib/saju/strength.ts`). The visible count treats all
+eight characters as equal; a Myeongri reader does not. `strength` weighs the chart like this:
+
+- **Hidden stems (지장간, 월률분야).** Each branch is split among its hidden stems by the days
+  (out of 30) each one rules — 寅 = 戊 7 · 丙 7 · 甲 16. A chart with no visible Fire can still
+  hold some Fire.
+- **Position.** Stems 10, branches 10, **month branch 30** (월령 — it sets the season and so which
+  element is in charge), **day branch 15** (the day master's own seat).
+- **Full combinations.** All three branches of a 삼합 or 방합 add +10 to that element. Half
+  combinations do not count.
+- **Day master strength (신강/신약).** Share of the chart that is the day master's element or the
+  one that produces it: under 42% weak, over 58% strong, balanced between. Reported together with
+  득령 (month supports), 득지 (day branch supports), 득세 (at least half of the other characters
+  support).
+- **Season and climate (조후)** from the month branch: winter charts run cold, summer charts hot.
+- **Ten God groups** are recomputed from the same weights, with the day stem left out of `peer`.
+
+Every element tied for the top or bottom score is returned — no hidden tie-break. Left out on
+purpose: transforming stem combinations (천간합화), six harmonies (육합), clashes (충), 격국, 용신,
+and true-solar-time correction (we do not ask for the birthplace). Luck cycles (대운) are out on
+principle: they are predictions. The weights are one common convention, stated so they can be
+checked by hand — `strength.test.ts` works one chart through in full.
 
 ## Reading engine
 
@@ -135,7 +155,7 @@ times are rejected with 400 before anything is calculated.
 ### What the model is and is not given
 
 The model never sees the birth date or birth time. It receives the calculated chart only. The
-payload also differs from the engine output in one place: `ten_god_group_counts.peer` has the day
+payload sends star groups as weighted `ten_god_group_strength_percent`, and `peer` there has the day
 master's Bigyeon removed, because that star is the reader, not a peer. Sending the raw count
 would read every single person as group-class oriented. See the Ten God rule above.
 

@@ -70,12 +70,12 @@ describe('calculateSaju — birth time known', () => {
     });
   }
 
-  it('reports the strongest, weakest and missing elements', () => {
+  it('reports visible counts, weighted strongest and weakest, and missing elements', () => {
     const result = calculateSaju({ year: 1990, month: 5, day: 15, time: '14:30' });
 
     expect(result.elementCounts).toEqual({ wood: 0, fire: 2, earth: 2, metal: 3, water: 1 });
-    expect(result.strongestElement).toBe('metal');
-    expect(result.weakestElement).toBe('wood');
+    expect(result.strength.strongestElements).toEqual(['metal']);
+    expect(result.strength.weakestElements).toEqual(['wood']);
     expect(result.missingElements).toEqual(['wood']);
   });
 });

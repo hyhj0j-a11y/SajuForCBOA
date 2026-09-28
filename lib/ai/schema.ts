@@ -24,8 +24,13 @@ function words(max: number, hint: string) {
 
 const TITLE_HINT = 'An invented, memorable 2-5 word name grounded in the data, e.g. "The Quiet Mountain".';
 
-/** Fields are declared in the order they are shown — Gemini writes them in schema order. */
-export const readingSchema = z.object({
+type Field = (max: number, hint: string) => z.ZodType<string>;
+
+/**
+ * Fields are declared in the order they are shown — Gemini writes them in schema order. The
+ * shape is shared with the translation; only how each field is limited differs.
+ */
+const buildReadingSchema = (words: Field) => z.object({
   saju_snapshot: words(
     40,
     'How Saju describes this person, in plain words. Start from day_master.image, then say what the strongest or missing element adds. Explain any Saju term in a few words.'
@@ -65,10 +70,28 @@ export const readingSchema = z.object({
   question: words(20, 'A reflective question to ask yourself. Not a prediction.'),
 });
 
+export const readingSchema = buildReadingSchema(words);
+
 export type Reading = z.infer<typeof readingSchema>;
 
-export const readingJsonSchema: Record<string, unknown> = (() => {
-  const jsonSchema = z.toJSONSchema(readingSchema) as Record<string, unknown>;
+/**
+ * Chinese and Japanese have no spaces to count words by, so a translated field is capped in
+ * characters instead: generous for a faithful translation, tight enough to stop a runaway answer.
+ */
+export const translatedReadingSchema = buildReadingSchema((max, hint) =>
+  z
+    .string()
+    .trim()
+    .min(1, 'must not be empty')
+    .max(max * 6, `must be ${max * 6} characters or fewer`)
+    .meta({ description: `Translation of the English field: ${hint}` })
+);
+
+function toJsonSchema(schema: z.ZodType): Record<string, unknown> {
+  const jsonSchema = z.toJSONSchema(schema) as Record<string, unknown>;
   delete jsonSchema.$schema;
   return jsonSchema;
-})();
+}
+
+export const readingJsonSchema = toJsonSchema(readingSchema);
+export const translatedReadingJsonSchema = toJsonSchema(translatedReadingSchema);

@@ -34,21 +34,22 @@ describe('buildModelInput', () => {
     expect(payload).not.toContain('input');
   });
 
-  it('removes the day master from the peer count', () => {
-    // The chart itself carries two Peer stars; one of them is the day stem, which is the reader.
-    expect(WITH_TIME.tenGodGroups.peer).toBe(2);
-    expect(buildModelInput(WITH_TIME, 'student').ten_god_group_counts.peer).toBe(1);
+  it('sends weighted star-group strength, with the day master left out of peer', () => {
+    const groups = buildModelInput(WITH_TIME, 'student').ten_god_group_strength_percent;
+    const total = Object.values(groups).reduce((a, b) => a + b, 0);
+
+    // 戊 day master: peer = Earth minus the day stem itself, wealth = Water (the 子 month).
+    expect(total).toBeCloseTo(100, 0);
+    expect(groups).toEqual({ peer: 19.1, resource: 3.7, output: 16.1, wealth: 39.6, authority: 21.4 });
   });
 
-  it('never sends a negative peer count, even when the day master is the only Peer star', () => {
-    expect(WITHOUT_TIME.tenGodGroups.peer).toBe(1);
-    expect(buildModelInput(WITHOUT_TIME, 'student').ten_god_group_counts.peer).toBe(0);
-  });
+  it('names the strongest element by weighted strength, not by the visible count', () => {
+    const payload = buildModelInput(WITH_TIME, 'student');
 
-  it('leaves the other star groups untouched', () => {
-    const counts = buildModelInput(WITH_TIME, 'student').ten_god_group_counts;
-
-    expect(counts).toEqual({ output: 2, resource: 0, peer: 1, authority: 2, wealth: 2 });
+    // Four elements tie at 2 visible characters; the winter month makes Water the strongest.
+    expect(payload.visible_element_counts).toEqual({ wood: 2, fire: 0, earth: 2, metal: 2, water: 2 });
+    expect(payload.strongest_elements).toEqual(['water']);
+    expect(payload.day_master_strength.level).toBe('weak');
   });
 
   it('sends star groups in English, never Korean', () => {

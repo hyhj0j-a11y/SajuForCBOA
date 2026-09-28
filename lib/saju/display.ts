@@ -1,4 +1,5 @@
 import type { Element, SajuResult } from './calculate';
+import { DAY_MASTER_IMAGE_NAME, type Lang } from '../i18n';
 
 /** What the API returns: the calculated chart with the birth data stripped out. */
 export type SajuChart = Omit<SajuResult, 'input'>;
@@ -66,4 +67,9 @@ export const DAY_MASTER_IMAGE: Record<string, { name: string; emoji: string }> =
 export function polarityLabel(chart: SajuChart): string {
   const { polarity, element } = chart.dayMaster;
   return `${polarity === 'yang' ? 'Yang' : 'Yin'} ${ELEMENT_LABEL[element]}`;
+}
+
+export function dayMasterImage(hanja: string, lang: Lang = 'en'): { name: string; emoji: string } {
+  const image = DAY_MASTER_IMAGE[hanja];
+  return lang === 'en' ? image : { ...image, name: DAY_MASTER_IMAGE_NAME[lang][hanja] };
 }

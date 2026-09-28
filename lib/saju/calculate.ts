@@ -1,4 +1,5 @@
 import { Solar } from 'lunar-javascript';
+import { measureStrength, type StrengthResult } from './strength';
 
 export type Element = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
 export type Polarity = 'yang' | 'yin';
@@ -64,8 +65,11 @@ export interface SajuResult {
   elementCounts: Record<Element, number>;
   tenGodCounts: Record<TenGod, number>;
   tenGodGroups: Record<TenGodGroup, number>;
-  strongestElement: Element;
-  weakestElement: Element;
+  /**
+   * Weighted strength — hidden stems, the month's season, full combinations, day master
+   * strength. See `strength.ts`. `elementCounts` stays the plain count of visible characters.
+   */
+  strength: StrengthResult;
   missingElements: Element[];
 }
 
@@ -151,7 +155,7 @@ const CONTROLS: Record<Element, Element> = {
   metal: 'wood',
 };
 
-/** Fixed order used for every count and for breaking ties deterministically. */
+/** Fixed order used for every count. */
 export const ELEMENT_ORDER: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
 
 export const TEN_GOD_GROUP: Record<TenGod, TenGodGroup> = {
@@ -300,12 +304,10 @@ export function calculateSaju(input: SajuInput): SajuResult {
     }
   }
 
-  const strongestElement = ELEMENT_ORDER.reduce((best, e) =>
-    elementCounts[e] > elementCounts[best] ? e : best
-  );
-  const weakestElement = ELEMENT_ORDER.reduce((worst, e) =>
-    elementCounts[e] < elementCounts[worst] ? e : worst
-  );
+  const named = (['year', 'month', 'day', 'hour'] as const).flatMap((name) => {
+    const pillar = pillars[name];
+    return pillar ? [{ name, stem: pillar.stem, branch: pillar.branch }] : [];
+  });
 
   return {
     input,
@@ -315,8 +317,7 @@ export function calculateSaju(input: SajuInput): SajuResult {
     elementCounts,
     tenGodCounts,
     tenGodGroups,
-    strongestElement,
-    weakestElement,
+    strength: measureStrength(named, dayMaster),
     missingElements: ELEMENT_ORDER.filter((e) => elementCounts[e] === 0),
   };
 }

@@ -38,9 +38,9 @@ async function main() {
     console.log(`${sample.name}  —  role: ${sample.role}`);
     console.log(`Chart: ${chart(saju)}   time_known: ${saju.timeKnown}`);
     console.log(
-      `Elements: ${JSON.stringify(input.element_counts)}   weakest: ${input.weakest_element}`
+      `Strength %: ${JSON.stringify(input.element_strength_percent)}   day master: ${input.day_master_strength.level}`
     );
-    console.log(`Star groups sent to the model: ${JSON.stringify(input.ten_god_group_counts)}`);
+    console.log(`Star groups sent to the model: ${JSON.stringify(input.ten_god_group_strength_percent)}`);
     console.log('-'.repeat(72));
 
     const started = Date.now();

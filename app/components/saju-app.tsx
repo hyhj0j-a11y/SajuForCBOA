@@ -3,9 +3,11 @@
 import { useRef, useState } from 'react';
 import type { Reading } from '@/lib/ai/schema';
 import type { BirthRequest } from '@/lib/birth-input';
+import { UI, type Lang, type TranslatedLang } from '@/lib/i18n';
 import type { SajuChart } from '@/lib/saju/display';
 import { drawShareCard } from '@/lib/share-card';
 import { BirthForm } from './birth-form';
+import { LanguageSwitch } from './language-switch';
 import { PillarsTable } from './pillars-table';
 import { SajuSnapshot } from './saju-snapshot';
 import { ReadingCards, ReadingSkeleton } from './reading-cards';
@@ -23,7 +25,7 @@ type ReadingState =
 
 const EMPTY: BirthRequest = { birthDate: '', birthTime: '', role: 'student' };
 
-function post(path: string, body: BirthRequest, signal: AbortSignal) {
+function post(path: string, body: unknown, signal: AbortSignal) {
   return fetch(path, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -54,7 +56,19 @@ export function SajuApp() {
   const [formError, setFormError] = useState<string | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [lang, setLang] = useState<Lang>('en');
+  const [translations, setTranslations] = useState<Partial<Record<TranslatedLang, Reading>>>({});
+  const [translating, setTranslating] = useState<TranslatedLang | null>(null);
+  const [translateError, setTranslateError] = useState<TranslatedLang | null>(null);
   const abort = useRef<AbortController | null>(null);
+
+  /** The reading as the reader sees it: English, or the translation they picked. */
+  const shown: Reading | null =
+    reading.status !== 'done'
+      ? null
+      : lang === 'en'
+        ? reading.reading
+        : (translations[lang] ?? reading.reading);
 
   function backToForm(message: string | null) {
     abort.current?.abort();
@@ -121,6 +135,7 @@ export function SajuApp() {
     setOnResult(true);
     setChart(null);
     setReading({ status: 'loading' });
+    resetTranslations();
 
     void loadChart(next, controller.signal);
     void loadReading(next, controller.signal);
@@ -132,7 +147,61 @@ export function SajuApp() {
     abort.current = controller;
 
     setReading({ status: 'loading' });
+    resetTranslations();
     void loadReading(values, controller.signal);
+  }
+
+  function resetTranslations() {
+    setLang('en');
+    setTranslations({});
+    setTranslating(null);
+    setTranslateError(null);
+  }
+
+  /**
+   * Translations are made only when someone taps a language, and kept for the page's life —
+   * switching back and forth never asks the model twice.
+   */
+  async function selectLang(next: Lang) {
+    setTranslateError(null);
+    if (next === 'en' || translations[next]) {
+      setLang(next);
+      return;
+    }
+    if (!chart || reading.status !== 'done') return;
+
+    const signal = abort.current?.signal ?? new AbortController().signal;
+    const body = { reading: reading.reading, lang: next, dayStem: chart.dayMaster.hanja };
+    setTranslating(next);
+
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        const response = await post('/api/translate', body, signal);
+        if (signal.aborted) return;
+        if (response.ok) {
+          const payload = await response.json();
+          setTranslations((current) => ({ ...current, [next]: payload.reading }));
+          setLang(next);
+          setTranslating(null);
+          return;
+        }
+        // Only a busy server is worth waiting for; anything else will fail the same way again.
+        if (response.status !== 429 && response.status !== 503) break;
+      } catch {
+        if (signal.aborted) return;
+      }
+
+      if (attempt < RETRY_DELAYS_MS.length) {
+        try {
+          await sleep(RETRY_DELAYS_MS[attempt], signal);
+        } catch {
+          return;
+        }
+      }
+    }
+
+    setTranslating(null);
+    setTranslateError(next);
   }
 
   async function saveImage() {
@@ -141,7 +210,7 @@ export function SajuApp() {
     setSharing(true);
     setShareError(null);
     try {
-      const canvas = drawShareCard(chart, reading.reading, values.role);
+      const canvas = drawShareCard(chart, shown ?? reading.reading, values.role, lang);
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error('The image could not be created.');
 
@@ -188,45 +257,71 @@ export function SajuApp() {
     <div className="flex flex-col gap-4">
       <Wordmark compact />
 
+      <div className="flex flex-col gap-1.5">
+        <LanguageSwitch
+          value={lang}
+          pending={translating}
+          disabled={!chart || reading.status !== 'done'}
+          onChange={selectLang}
+        />
+        {translating || translateError || lang !== 'en' ? (
+          <p
+            lang={translating ?? translateError ?? lang}
+            aria-live="polite"
+            className={`pl-7 text-[13px] ${translateError ? 'text-error' : 'text-muted'}`}
+          >
+            {translating
+              ? UI[translating].translating
+              : translateError
+                ? UI[translateError].translateFailed
+                : UI[lang].translatedNote}
+          </p>
+        ) : null}
+      </div>
+
       {chart ? <PillarsTable chart={chart} /> : <ChartSkeleton />}
 
-      {chart ? (
-        <SajuSnapshot
-          chart={chart}
-          text={reading.status === 'done' ? reading.reading.saju_snapshot : null}
-          pending={reading.status === 'loading' || reading.status === 'busy'}
-        />
-      ) : null}
+      {/* `lang` lets the phone pick Traditional, Simplified or Japanese glyphs for the same characters. */}
+      <div lang={lang} className="contents">
+        {chart ? (
+          <SajuSnapshot
+            chart={chart}
+            text={shown ? shown.saju_snapshot : null}
+            pending={reading.status === 'loading' || reading.status === 'busy'}
+            lang={lang}
+          />
+        ) : null}
 
-      {reading.status === 'done' ? (
-        <ReadingCards reading={reading.reading} role={values.role} />
-      ) : reading.status === 'failed' ? (
-        <section role="alert" className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-5">
-          <h2 className="text-[18px] font-semibold text-ink">
-            <span aria-hidden="true">😵‍💫</span> The reading did not come through.
-          </h2>
-          <p className="text-[15px] leading-relaxed text-muted">
-            Your chart above is real and calculated. The written reading is still missing, and we
-            will not invent one.
+        {shown ? (
+          <ReadingCards reading={shown} role={values.role} lang={lang} />
+        ) : reading.status === 'failed' ? (
+          <section role="alert" className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-5">
+            <h2 className="text-[18px] font-semibold text-ink">
+              <span aria-hidden="true">😵‍💫</span> The reading did not come through.
+            </h2>
+            <p className="text-[15px] leading-relaxed text-muted">
+              Your chart above is real and calculated. The written reading is still missing, and we
+              will not invent one.
+            </p>
+            <button
+              type="button"
+              onClick={retryReading}
+              className="h-12 rounded-lg border border-ink bg-surface text-[16px] font-medium text-ink"
+            >
+              Retry now
+            </button>
+          </section>
+        ) : (
+          <ReadingSkeleton note={reading.status === 'busy' ? BUSY_NOTE : LOADING_NOTE} />
+        )}
+
+        <footer className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-6 text-center">
+          <p className="text-[15px] font-medium text-ink">
+            <span aria-hidden="true">🪞</span> {UI[lang].motto}
           </p>
-          <button
-            type="button"
-            onClick={retryReading}
-            className="h-12 rounded-lg border border-ink bg-surface text-[16px] font-medium text-ink"
-          >
-            Retry now
-          </button>
-        </section>
-      ) : (
-        <ReadingSkeleton note={reading.status === 'busy' ? BUSY_NOTE : LOADING_NOTE} />
-      )}
-
-      <footer className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-6 text-center">
-        <p className="text-[15px] font-medium text-ink">
-          <span aria-hidden="true">🪞</span> Use Saju as a mirror, not as a map.
-        </p>
-        <p className="text-[14px] text-muted">Our future is still ours to choose.</p>
-      </footer>
+          <p className="text-[14px] text-muted">{UI[lang].mottoSub}</p>
+        </footer>
+      </div>
 
       {shareError ? (
         <p role="alert" className="text-center text-[14px] text-error">
