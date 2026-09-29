@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/places': ['./data/cities.json'],
   },
+  /** The poster invitation is a static page in `public/invite/`; serve it at `/invite` too. */
+  async rewrites() {
+    return [{ source: '/invite', destination: '/invite/index.html' }];
+  },
 };
 
 export default nextConfig;
