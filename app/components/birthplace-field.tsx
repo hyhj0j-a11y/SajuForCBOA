@@ -93,16 +93,17 @@ export function BirthplaceField({
         className={FIELD}
       >
         <option value="">Any country</option>
+        {/* Server and phone ICU name some places differently ("Hong Kong SAR China"); either is fine. */}
         <optgroup label="Common here">
           {countries.common.map(({ code, name }) => (
-            <option key={code} value={code}>
+            <option key={code} value={code} suppressHydrationWarning>
               {countryFlag(code)} {name}
             </option>
           ))}
         </optgroup>
         <optgroup label="All countries">
           {countries.rest.map(({ code, name }) => (
-            <option key={code} value={code}>
+            <option key={code} value={code} suppressHydrationWarning>
               {countryFlag(code)} {name}
             </option>
           ))}

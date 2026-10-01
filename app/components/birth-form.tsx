@@ -2,8 +2,8 @@
 
 import { useId, useState } from 'react';
 import type { BirthRequest } from '@/lib/birth-input';
-import { MAX_BIRTH_DATE, MAX_YEAR, MIN_BIRTH_DATE, MIN_YEAR } from '@/lib/birth-range';
 import type { Place } from '@/lib/places/types';
+import { BirthDateField } from './birth-date-field';
 import { BirthplaceField } from './birthplace-field';
 
 const ROLES = [
@@ -84,24 +84,7 @@ export function BirthForm({ initial, initialPlace, error, onSubmit }: Props) {
         </p>
       </fieldset>
 
-      <div className="flex flex-col gap-3">
-        <label htmlFor={`${ids}-date`} className="text-sm font-medium text-muted">
-          When were you born?
-        </label>
-        <input
-          id={`${ids}-date`}
-          type="date"
-          required
-          value={birthDate}
-          min={MIN_BIRTH_DATE}
-          max={MAX_BIRTH_DATE}
-          onChange={(event) => setBirthDate(event.target.value)}
-          className={FIELD}
-        />
-        <p className="text-[13px] text-muted">
-          Use your solar (normal calendar) birthday, between {MIN_YEAR} and {MAX_YEAR}.
-        </p>
-      </div>
+      <BirthDateField value={birthDate} onChange={setBirthDate} />
 
       <div className="flex flex-col gap-3">
         <label htmlFor={`${ids}-time`} className="text-sm font-medium text-muted">

@@ -113,9 +113,9 @@ export function PillarsTable({ chart, placeName }: { chart: SajuChart; placeName
               <span aria-hidden="true" className="text-[18px] leading-none">
                 {ELEMENT_EMOJI[element]}
               </span>
-              <span>
-                {ELEMENT_LABEL[element]} <span className="tabular-nums">{count}</span>
-              </span>
+              {/* Name and count on their own lines: side by side, "Water 0" wraps on a small phone. */}
+              <span>{ELEMENT_LABEL[element]}</span>
+              <span className="tabular-nums">{count}</span>
               <span className="tabular-nums text-[12px] font-semibold">
                 {Math.round(chart.strength.elementScores[element])}%
               </span>
