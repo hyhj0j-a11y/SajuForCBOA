@@ -15,8 +15,16 @@ import { ReadingCards, ReadingSkeleton } from './reading-cards';
 
 const RETRY_DELAYS_MS = [1500, 3000, 6000];
 
+/** How long a reader stays in line while the server says "busy" — a whole room at once fits. */
+const BUSY_WAIT_MS = 3 * 60_000;
+
+/** 2–4 s with jitter, so a room of phones that were turned away together do not return together. */
+function busyDelay() {
+  return 2000 + Math.random() * 2000;
+}
+
 const LOADING_NOTE = 'Reading your chart… this takes a few seconds.';
-const BUSY_NOTE = 'Lots of people are reading their Saju right now. Please wait a moment…';
+const BUSY_NOTE = "Lots of people are reading their Saju right now. You're in line — please keep this page open…";
 
 type ReadingState =
   | { status: 'loading' }
@@ -93,9 +101,16 @@ export function SajuApp() {
     }
   }
 
-  /** Retries a busy server a few times. A failed reading stays empty — never a made-up one. */
+  /**
+   * "Busy" (429/503) means the reader is in line, so it is retried until BUSY_WAIT_MS has passed;
+   * any other failure gets the short retry ladder. A failed reading stays empty — never a made-up one.
+   */
   async function loadReading(body: BirthRequest, signal: AbortSignal) {
-    for (let attempt = 0; ; attempt += 1) {
+    const started = Date.now();
+    let failures = 0;
+
+    for (;;) {
+      let busy = false;
       try {
         const response = await post('/api/reading', body, signal);
         if (signal.aborted) return;
@@ -108,18 +123,21 @@ export function SajuApp() {
           backToForm('Check your birth details.');
           return;
         }
+        busy = response.status === 429 || response.status === 503;
       } catch {
         if (signal.aborted) return;
       }
 
-      if (attempt >= RETRY_DELAYS_MS.length) {
+      const delay = busy ? busyDelay() : RETRY_DELAYS_MS[failures];
+      if (busy ? Date.now() - started + delay > BUSY_WAIT_MS : failures >= RETRY_DELAYS_MS.length) {
         setReading({ status: 'failed' });
         return;
       }
+      if (!busy) failures += 1;
 
       setReading({ status: 'busy' });
       try {
-        await sleep(RETRY_DELAYS_MS[attempt], signal);
+        await sleep(delay, signal);
       } catch {
         return;
       }

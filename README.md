@@ -28,7 +28,7 @@ To try it on a phone, open `http://<your-PC-LAN-IP>:3000` on the same Wi-Fi.
 | --- | --- | --- | --- |
 | `GEMINI_API_KEY` | yes | — | Google AI Studio key. Read only in server code, never sent to the browser. |
 | `GEMINI_MODEL` | no | `gemini-3.5-flash-lite` | Model for the reading. Check its free-tier **daily** quota before a live event. |
-| `MAX_CONCURRENT` | no | `10` | Gemini calls in flight at once, per server instance. Extra requests queue for up to 12 s, then get a 503 "busy, try again". |
+| `MAX_CONCURRENT` | no | `10` | Gemini calls in flight at once, per server instance. Extra requests queue for up to 25 s, then get a 503 "busy"; the page keeps the reader in line and retries for up to 3 minutes. |
 | `RATE_LIMIT_PER_WINDOW` | no | `120` | Requests per IP per 10 s. Loose on purpose: the whole room shares one Wi-Fi IP. |
 
 `.env.local` is gitignored (`.env*` with only `.env.local.example` allowed back in). None of these

@@ -28,29 +28,43 @@ function sample(index: number) {
 interface Outcome {
   ok: boolean;
   ms: number;
+  /** How many times the server said "busy" before answering — the page waits through these. */
+  busy: number;
   reason?: string;
 }
 
+/** Like the page: a 429/503 "busy" keeps the reader in line, retried every 2–4 s for 3 minutes. */
+const BUSY_WAIT_MS = 3 * 60_000;
+
 async function fire(index: number): Promise<Outcome> {
   const started = Date.now();
-  try {
-    const response = await fetch(`${BASE_URL}/api/reading`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(sample(index)),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-    const ms = Date.now() - started;
+  let busy = 0;
+  for (;;) {
+    let reason: string;
+    try {
+      const response = await fetch(`${BASE_URL}/api/reading`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(sample(index)),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (response.ok) return { ok: true, ms: Date.now() - started, busy };
 
-    if (response.ok) return { ok: true, ms };
+      const body = await response.json().catch(() => null);
+      reason = `${response.status} ${body?.error ?? response.statusText}`;
+      if (response.status !== 429 && response.status !== 503) {
+        return { ok: false, ms: Date.now() - started, busy, reason };
+      }
+    } catch (error) {
+      const name = error instanceof Error ? error.name : 'Error';
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, ms: Date.now() - started, busy, reason: name === 'TimeoutError' ? 'client timeout' : message };
+    }
 
-    const body = await response.json().catch(() => null);
-    return { ok: false, ms, reason: `${response.status} ${body?.error ?? response.statusText}` };
-  } catch (error) {
-    const ms = Date.now() - started;
-    const name = error instanceof Error ? error.name : 'Error';
-    const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, ms, reason: name === 'TimeoutError' ? 'client timeout' : message };
+    busy += 1;
+    const delay = 2000 + Math.random() * 2000;
+    if (Date.now() - started + delay > BUSY_WAIT_MS) return { ok: false, ms: Date.now() - started, busy, reason };
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
@@ -102,6 +116,9 @@ async function main() {
     const reason = outcome.reason ?? 'unknown';
     failures.set(reason, (failures.get(reason) ?? 0) + 1);
   }
+
+  const waited = outcomes.filter((outcome) => outcome.busy > 0).length;
+  console.log(`Waited in line: ${waited}/${COUNT}  (most retries: ${Math.max(...outcomes.map((outcome) => outcome.busy))})`);
 
   if (failures.size === 0) {
     console.log('\nNo failures.');

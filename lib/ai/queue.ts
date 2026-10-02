@@ -1,7 +1,10 @@
 const DEFAULT_MAX_CONCURRENT = 10;
 
-/** Longer than this and the reader is better off being told we are busy, so they can retry. */
-const MAX_QUEUE_WAIT_MS = 12_000;
+/**
+ * Longer than this and the reader is told "busy"; the page then keeps them in line and asks again.
+ * Leaves the route budget (50 s) room for the model call itself.
+ */
+const MAX_QUEUE_WAIT_MS = 25_000;
 
 export class ServerBusyError extends Error {
   constructor(message = 'Too many readings are being written right now.') {
