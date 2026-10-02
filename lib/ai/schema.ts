@@ -11,6 +11,9 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** Body text from this many words up; titles, the experiment and the question stay short. */
+const LONG_FIELD = 40;
+
 /**
  * Word limits cannot be expressed in JSON Schema, so they reach the model only as the
  * description and are enforced here. A breach is what triggers the one retry.
@@ -23,7 +26,13 @@ function words(max: number, hint: string) {
     .refine((value) => countWords(value) <= max, {
       message: `must be ${max} words or fewer`,
     })
-    .meta({ description: `${hint} Maximum ${max} words.` });
+    // A maximum alone, and the model stops well short of it; body fields also get a target.
+    .meta({
+      description:
+        max >= LONG_FIELD
+          ? `${hint} Aim for ${Math.round(max * 0.8)}-${max} words.`
+          : `${hint} Maximum ${max} words.`,
+    });
 }
 
 const TITLE_HINT =
@@ -31,7 +40,7 @@ const TITLE_HINT =
 
 type Field = (max: number, hint: string) => z.ZodType<string>;
 
-const titled = (field: Field, body: string, max = 45) =>
+const titled = (field: Field, body: string, max = 68) =>
   z.object({ title: field(5, TITLE_HINT), body: field(max, body) });
 
 /**
@@ -41,10 +50,10 @@ const titled = (field: Field, body: string, max = 45) =>
 function sections(field: Field) {
   return {
     saju_snapshot: field(
-      40,
+      60,
       'How Saju sees this person, in plain words. Start from day_master.image. Explain any Saju term in a few words.'
     ),
-    identity: titled(field, 'Who this person is: one recognisable, specific observation. Not a list of adjectives.', 40),
+    identity: titled(field, 'Who this person is: one recognisable, specific observation. Not a list of adjectives.', 60),
     hidden_side: titled(field, 'What people do not notice at first. A contrast: "You may look X, but Y."'),
   };
 }
@@ -56,7 +65,7 @@ function studentShape(field: Field) {
     cebu_mode: titled(field, 'How they live abroad in Cebu, outside class: new people, new places, their own rhythm.'),
     blind_spot: z.object({
       title: field(5, TITLE_HINT),
-      body: field(40, 'Their most interesting academy-life habit that can get in their way, as a scene.'),
+      body: field(60, 'Their most interesting academy-life habit that can get in their way, as a scene.'),
       action: field(20, 'ONE small, fun experiment they can try this week at the academy.'),
     }),
     question: field(20, 'One memorable question to ask yourself. Not a prediction.'),
@@ -70,7 +79,7 @@ function normalShape(field: Field) {
     people_style: titled(field, 'How they are with people: trust, closeness, friends, groups. No romance.'),
     blind_spot: z.object({
       title: field(5, TITLE_HINT),
-      body: field(40, 'One realistic pattern that can get in their way, as a scene.'),
+      body: field(60, 'One realistic pattern that can get in their way, as a scene.'),
       action: field(20, 'ONE small, fun real-life experiment they can try this week.'),
     }),
     question: field(20, 'One memorable question to ask yourself. Not a prediction.'),
